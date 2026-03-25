@@ -7,10 +7,7 @@ const EndSessionPromptScreen = ({ navigation }: StackScreenProps<any>) => {
     <View style={styles.container}>
       <Text style={styles.title}>End-Session Prompt Screen</Text>
       <Text>This is a placeholder.</Text>
-      <Button 
-        title="Go Back" 
-        onPress={() => navigation.goBack()} 
-      />
+      <Button title="Go Back" onPress={() => navigation.goBack()} />
     </View>
   );
 };
