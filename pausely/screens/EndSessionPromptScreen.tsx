@@ -1,10 +1,21 @@
 import { View, Text, StyleSheet, Button } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useEffect } from 'react';
+import { useSession } from '../context/sessionStore';
 
 const EndSessionPromptScreen = ({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, 'EndSessionPrompt'>) => {
+  const { group } = useSession();
+
+  // Make sure that even if somehow a control group user ends up here they immediately get redirected
+  useEffect(() => {
+    if (group === 'control') {
+      navigation.navigate('Feed');
+    }
+  }, [group]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>End-Session Prompt Screen</Text>

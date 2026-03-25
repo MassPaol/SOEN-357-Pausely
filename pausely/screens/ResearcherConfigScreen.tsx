@@ -9,6 +9,14 @@ const ResearcherConfigScreen = ({
 }: NativeStackScreenProps<RootStackParamList, 'ResearcherConfig'>) => {
   const { group, setGroup } = useSession();
 
+  const handleDone = () => {
+    if (group === 'control') {
+      navigation.navigate('Feed');
+    } else {
+      navigation.goBack();
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Researcher config</Text>
@@ -56,11 +64,7 @@ const ResearcherConfigScreen = ({
           : 'Experimental: participant sees reflective prompts at entry, mid-session, and exit.'}
       </Text>
 
-      <AppButton
-        title="Done"
-        onPress={() => navigation.goBack()}
-        style={styles.button}
-      />
+      <AppButton title="Done" onPress={handleDone} style={styles.button} />
     </View>
   );
 };

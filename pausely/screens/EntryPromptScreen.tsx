@@ -1,11 +1,10 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableWithoutFeedback,
   Keyboard,
-  TouchableOpacity,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -13,7 +12,6 @@ import { AppButton } from '../components/AppButton';
 import { useSession } from '../context/sessionStore';
 import { AppWheelPicker } from '../components/AppWheelPicker';
 import { AppTextArea } from '../components/AppTextArea';
-import { AppLogo } from '../components/AppLogo';
 
 const DURATION_OPTIONS = Array.from({ length: 24 }, (_, i) => {
   const minutes = (i + 1) * 5;
@@ -23,24 +21,9 @@ const DURATION_OPTIONS = Array.from({ length: 24 }, (_, i) => {
 const EntryPromptScreen = ({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, 'EntryPrompt'>) => {
-  const tapCount = useRef(0);
-  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { startSession } = useSession();
+  const { startSession, group } = useSession();
   const [selectedMinutes, setSelectedMinutes] = useState(30);
   const [goal, setGoal] = useState('');
-
-  const handleLogoTap = () => {
-    tapCount.current += 1;
-    if (tapTimer.current) clearTimeout(tapTimer.current);
-    if (tapCount.current >= 5) {
-      tapCount.current = 0;
-      navigation.navigate('ResearcherConfig');
-    } else {
-      tapTimer.current = setTimeout(() => {
-        tapCount.current = 0;
-      }, 3000);
-    }
-  };
 
   const handleBegin = () => {
     startSession(selectedMinutes * 60 * 1000, goal);

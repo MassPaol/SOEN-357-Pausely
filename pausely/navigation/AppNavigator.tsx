@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, Platform } from 'react-native';
 import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
@@ -49,10 +49,11 @@ function LogoHeader() {
   };
 
   return (
-    <Pressable onPress={handleLogoTap}>
-      <View style={{ paddingTop: 50, marginLeft: -85 }}>
-        <AppLogo width={250} />
-      </View>
+    <Pressable
+      onPress={handleLogoTap}
+      style={{ paddingTop: 50, marginLeft: Platform.OS === 'ios' ? -85 : 0 }}
+    >
+      <AppLogo width={250} />
     </Pressable>
   );
 }
