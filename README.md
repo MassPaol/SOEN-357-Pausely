@@ -24,16 +24,18 @@ Follow these steps to set up the project locally:
    cd SOEN-357-Pausely
    ```
 
-2. **Navigate to the application directory:**
-
-   ```bash
-   cd pausely
-   ```
-
-3. **Install dependencies:**
+2. **Install dependencies (at the root of the project):**
 
    ```bash
    npm install
+   ```
+
+   _(Note: If you encounter an error with `husky`, run `npm install --ignore-scripts` instead.)_
+
+3. **Navigate to the application directory:**
+
+   ```bash
+   cd pausely
    ```
 
 4. **Start the development server:**
