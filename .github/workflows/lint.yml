@@ -30,3 +30,4 @@ jobs:
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: auto-fix linting issues"
+          file_pattern: 'pausely/*.ts pausely/*.tsx' # Only commit code fixes
