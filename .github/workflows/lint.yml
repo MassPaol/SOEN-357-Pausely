@@ -10,8 +10,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          # This ensures it looks at the lockfile in the subfolder
-          cache-dependency-path: pausely/package-lock.json
+          # Removed the cache-dependency-path line!
 
       # 1. Install All Dependencies
       - name: Install All Dependencies
