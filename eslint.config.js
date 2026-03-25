@@ -1,22 +1,25 @@
 const { FlatCompat } = require('@eslint/eslintrc');
 const js = require('@eslint/js');
+const path = require('path'); // Add this for pathing
 const prettierPlugin = require('eslint-plugin-prettier');
 const prettierConfig = require('eslint-config-prettier');
 
 const compat = new FlatCompat({
-  baseDirectory: __dirname,
+  // This tells ESLint to resolve 'expo' relative to the pausely folder
+  baseDirectory: path.join(__dirname, 'pausely'), 
   recommendedConfig: js.configs.recommended,
 });
 
 module.exports = [
-  // 1. Load the old "expo" config through the translator
+  {
+    // Ignore the root node_modules and other junk
+    ignores: ["node_modules/**", ".expo/**", "web-build/**"],
+  },
   ...compat.extends('expo'),
-
-  // 2. Define modern flat rules
   {
     languageOptions: {
       globals: {
-        __dirname: 'readonly', // This fixes the __dirname error
+        __dirname: 'readonly',
       },
     },
     plugins: {
