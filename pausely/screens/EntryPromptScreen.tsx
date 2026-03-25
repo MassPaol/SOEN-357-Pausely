@@ -1,15 +1,30 @@
-import { View, Text, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { AppButton } from '../components/AppButton';
 import { useSession } from '../context/sessionStore';
 import { useState } from 'react';
+import { AppWheelPicker } from '../components/AppWheelPicker';
+import { AppTextArea } from '../components/AppTextArea';
+
+// Quick way to set up 5 minute intervals
+const DURATION_OPTIONS = Array.from({ length: 24 }, (_, i) => {
+  const minutes = (i + 1) * 5;
+  return { label: `${minutes} minutes`, value: minutes };
+});
 
 const EntryPromptScreen = ({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, 'EntryPrompt'>) => {
   const { startSession } = useSession();
   const [selectedMinutes, setSelectedMinutes] = useState(30);
+  const [goal, setGoal] = useState('');
 
   const handleBegin = () => {
     startSession(selectedMinutes * 60 * 1000); // Store in milliseconds since the input is minutes but Date.now() uses milliseconds
@@ -17,28 +32,47 @@ const EntryPromptScreen = ({
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Entry Prompt Screen</Text>
-      <Text style={styles.text}>This is a placeholder.</Text>
-      <AppButton title="Start Session" onPress={() => handleBegin()} />
-    </View>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Set your intention</Text>
+
+        <AppWheelPicker
+          label="How long do you plan to use the app?"
+          options={DURATION_OPTIONS}
+          selectedValue={selectedMinutes}
+          onValueChange={setSelectedMinutes}
+          style={styles.field}
+        />
+
+        <AppTextArea
+          label="What do you want to accomplish?"
+          value={goal}
+          onChangeText={setGoal}
+          placeholder="e.g. catch up on news, check in with friends..."
+          style={styles.field}
+        />
+
+        <AppButton title="Begin Session" onPress={handleBegin} />
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 24,
     backgroundColor: '#fff',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontSize: 22,
+    fontWeight: '500',
+    marginBottom: 32,
+    color: '#333',
   },
-  text: {
-    marginBottom: 20,
+  field: {
+    marginBottom: 24,
   },
 });
 
