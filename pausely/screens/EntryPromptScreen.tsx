@@ -27,7 +27,11 @@ const EntryPromptScreen = ({
   const [goal, setGoal] = useState('');
 
   const handleBegin = () => {
-    startSession(selectedMinutes * 60 * 1000); // Store in milliseconds since the input is minutes but Date.now() uses milliseconds
+    startSession(selectedMinutes * 60 * 1000, goal); // Store in milliseconds since the input is minutes but Date.now() uses milliseconds
+    console.log(
+      'DEBUG: EntryPromptScreen.tsx -> Session state:',
+      useSession.getState(),
+    );
     navigation.navigate('Feed');
   };
 

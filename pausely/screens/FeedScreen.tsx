@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { AppButton } from '../components/AppButton';
+import { useSession } from '../context/sessionStore';
 
 const FeedScreen = ({
   navigation,
@@ -10,10 +10,6 @@ const FeedScreen = ({
     <View style={styles.container}>
       <Text style={styles.title}>Feed Screen</Text>
       <Text style={styles.text}>This is a placeholder.</Text>
-      <AppButton
-        title="Go to Entry Prompt"
-        onPress={() => navigation.navigate('EntryPrompt')}
-      />
     </View>
   );
 };

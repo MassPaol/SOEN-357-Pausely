@@ -24,7 +24,7 @@ export default function AppNavigator() {
   return (
     <Stack.Navigator
       initialRouteName="EntryPrompt"
-      screenOptions={{ headerShown: true }}
+      screenOptions={{ headerShown: false }}
     >
       <Stack.Screen
         name="Feed"

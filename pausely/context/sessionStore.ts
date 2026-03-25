@@ -12,6 +12,7 @@ type SessionState = {
   participantID: string;
   group: Group | null;
   intendedDuration: number | null;
+  reasonForSession: string | null;
   sessionStartTime: number | null;
   actualEndTime: number | null;
   postsViewed: number;
@@ -22,7 +23,7 @@ type SessionState = {
 };
 
 type SessionActions = {
-  startSession: (intendedDuration: number) => void;
+  startSession: (intendedDuration: number, reasonForSession: string) => void;
   endSession: () => void;
   incrementPostsViewed: () => void;
   incrementScrollCount: () => void;
@@ -39,6 +40,7 @@ const initialState: SessionState = {
   participantID: '',
   group: null,
   intendedDuration: null,
+  reasonForSession: null,
   sessionStartTime: null,
   actualEndTime: null,
   postsViewed: 0,
@@ -51,13 +53,14 @@ const initialState: SessionState = {
 export const useSession = create<SessionState & SessionActions>((set) => ({
   ...initialState,
 
-  startSession: (intendedDuration) =>
+  startSession: (intendedDuration, reasonForSession) =>
     set((state) => ({
       ...initialState,
       participantID: state.participantID, // preserve across sessions
       group: state.group, // preserve across sessions
       intendedDuration,
       sessionStartTime: Date.now(),
+      reasonForSession,
     })),
 
   endSession: () => set({ actualEndTime: Date.now() }),
