@@ -34,6 +34,7 @@ type SessionActions = {
   saveQuestionnaireResponse: (responses: object) => void;
   resetSession: () => void;
   setParticipant: (participantID: string, group: Group) => void;
+  setGroup: (group: Group) => void;
 };
 
 const initialState: SessionState = {
@@ -82,4 +83,6 @@ export const useSession = create<SessionState & SessionActions>((set) => ({
   resetSession: () => set(initialState),
 
   setParticipant: (participantID, group) => set({ participantID, group }),
+
+  setGroup: (group) => set({ group }),
 }));
