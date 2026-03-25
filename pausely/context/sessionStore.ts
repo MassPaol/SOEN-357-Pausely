@@ -22,11 +22,7 @@ type SessionState = {
 };
 
 type SessionActions = {
-  startSession: (
-    participantID: string,
-    group: Group,
-    intendedDuration: number,
-  ) => void;
+  startSession: (intendedDuration: number) => void;
   endSession: () => void;
   incrementPostsViewed: () => void;
   incrementScrollCount: () => void;
@@ -36,6 +32,7 @@ type SessionActions = {
   ) => void;
   saveQuestionnaireResponse: (responses: object) => void;
   resetSession: () => void;
+  setParticipant: (participantID: string, group: Group) => void;
 };
 
 const initialState: SessionState = {
@@ -54,14 +51,14 @@ const initialState: SessionState = {
 export const useSession = create<SessionState & SessionActions>((set) => ({
   ...initialState,
 
-  startSession: (participantID, group, intendedDuration) =>
-    set({
+  startSession: (intendedDuration) =>
+    set((state) => ({
       ...initialState,
-      participantID,
-      group,
+      participantID: state.participantID, // preserve across sessions
+      group: state.group, // preserve across sessions
       intendedDuration,
       sessionStartTime: Date.now(),
-    }),
+    })),
 
   endSession: () => set({ actualEndTime: Date.now() }),
 
@@ -80,4 +77,6 @@ export const useSession = create<SessionState & SessionActions>((set) => ({
     set({ questionnaireResponses: responses }),
 
   resetSession: () => set(initialState),
+
+  setParticipant: (participantID, group) => set({ participantID, group }),
 }));
