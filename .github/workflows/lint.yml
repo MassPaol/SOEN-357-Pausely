@@ -13,19 +13,13 @@ jobs:
           # This ensures it looks at the lockfile in the subfolder
           cache-dependency-path: pausely/package-lock.json
 
-      # 1. Install Root deps (Husky, lint-staged)
-      - name: Install Root Dependencies
+      # 1. Install All Dependencies
+      - name: Install All Dependencies
         run: npm install --ignore-scripts
 
-      # 2. Install App deps (React, Expo, Navigation)
-      - name: Install App Dependencies
-        working-directory: ./pausely
-        run: npm install
-
-      # 3. Run Lint from the context of the subfolder
+      # 2. Run Lint
       - name: Run ESLint
-        working-directory: ./pausely
-        run: npx eslint . --fix
+        run: npx eslint pausely/ --fix
 
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
