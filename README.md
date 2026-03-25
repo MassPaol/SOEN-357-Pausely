@@ -46,6 +46,7 @@ Follow these steps to set up the project locally:
 ## How to Run the App
 
 Once you run `npx expo start`, Metro Bundler will start and display a QR code in the terminal.
+> Note: Ensure that your directory is pausely
 
 - **Physical Device (Recommended):** Download the **Expo Go** app on your iOS or Android device. Scan the QR code (using the Camera app on iOS or the Expo Go app on Android) to open the project.
 - **Web Browser:** Press `w` in the terminal to launch the app in your default web browser.
