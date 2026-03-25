@@ -1,7 +1,10 @@
 import { View, Text, StyleSheet, Button } from 'react-native';
-import { StackScreenProps } from '@react-navigation/stack';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-const ResultsScreen = ({ navigation }: StackScreenProps<any>) => {
+const ResultsScreen = ({
+  navigation,
+}: NativeStackScreenProps<RootStackParamList, 'Results'>) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Results Screen</Text>

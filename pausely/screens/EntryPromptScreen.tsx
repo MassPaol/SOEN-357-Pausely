@@ -1,8 +1,11 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { StackScreenProps } from '@react-navigation/stack';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { AppButton } from '../components/AppButton';
 
-const EntryPromptScreen = ({ navigation }: StackScreenProps<any>) => {
+const EntryPromptScreen = ({
+  navigation,
+}: NativeStackScreenProps<RootStackParamList, 'EntryPrompt'>) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Entry Prompt Screen</Text>

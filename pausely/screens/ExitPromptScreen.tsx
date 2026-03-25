@@ -1,7 +1,10 @@
 import { View, Text, StyleSheet, Button } from 'react-native';
-import { StackScreenProps } from '@react-navigation/stack';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-const ExitPromptScreen = ({ navigation }: StackScreenProps<any>) => {
+const ExitPromptScreen = ({
+  navigation,
+}: NativeStackScreenProps<RootStackParamList, 'ExitPrompt'>) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Exit Prompt Screen</Text>

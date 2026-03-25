@@ -1,8 +1,11 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { StackScreenProps } from '@react-navigation/stack';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { AppButton } from '../components/AppButton';
 
-const FeedScreen = ({ navigation }: StackScreenProps<any>) => {
+const FeedScreen = ({
+  navigation,
+}: NativeStackScreenProps<RootStackParamList, 'Feed'>) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Feed Screen</Text>

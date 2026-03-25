@@ -1,7 +1,10 @@
 import { View, Text, StyleSheet, Button } from 'react-native';
-import { StackScreenProps } from '@react-navigation/stack';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-const MidSessionPromptScreen = ({ navigation }: StackScreenProps<any>) => {
+const MidSessionPromptScreen = ({
+  navigation,
+}: NativeStackScreenProps<RootStackParamList, 'MidSessionPrompt'>) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Mid-Session Prompt Screen</Text>
