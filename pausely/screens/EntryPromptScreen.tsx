@@ -1,13 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
+import { AppButton } from '../components/AppButton';
 
 const EntryPromptScreen = ({ navigation }: StackScreenProps<any>) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Entry Prompt Screen</Text>
-      <Text>This is a placeholder.</Text>
-      <Button title="Go Back" onPress={() => navigation.goBack()} />
+      <Text style={styles.text}>This is a placeholder.</Text>
+      <AppButton title="Go Back" onPress={() => navigation.goBack()} />
     </View>
   );
 };
@@ -23,6 +23,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
+  },
+  text: {
+    marginBottom: 20,
   },
 });
 
