@@ -1,0 +1,30 @@
+{
+  "name": "soen-357-project-root",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "pausely"
+    ],
+    "nohoist": []
+  },
+  "scripts": {
+    "prepare": "husky",
+    "lint": "eslint pausely/**"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "latest",
+    "eslint-config-prettier": "latest",
+    "eslint-plugin-prettier": "latest",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.5"
+  },
+  "lint-staged": {
+    "pausely/**/*.{ts,tsx,js,jsx}": "eslint --fix"
+  },
+  "dependencies": {
+    "@react-navigation/native-stack": "^7.14.8"
+  }
+}

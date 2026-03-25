@@ -1,0 +1,26 @@
+name: Lint and Fix
+on: [push, pull_request]
+
+jobs:
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          # Removed the cache-dependency-path line!
+
+      # 1. Install All Dependencies
+      - name: Install All Dependencies
+        run: npm install --ignore-scripts
+
+      # 2. Run Lint
+      - name: Run ESLint
+        run: npx eslint pausely/ --fix
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: auto-fix linting issues"
+          file_pattern: 'pausely/*.ts pausely/*.tsx' # Only commit code fixes 
