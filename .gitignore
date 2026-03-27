@@ -40,3 +40,7 @@ yarn-error.*
 
 #VSCode
 .vscode/
+
+# JetBrains / IntelliJ
+.idea/
+*.iml
