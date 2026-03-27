@@ -1,7 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { Image as ExpoImage } from 'expo-image';
-import { memo, useCallback, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   FlatList,
   ListRenderItemInfo,
   Pressable,
@@ -18,6 +19,8 @@ import mockPosts, { MockPost } from '../data/mockPosts';
 
 const INITIAL_LOOP_COUNT = 2;
 const RECYCLING_THRESHOLD = 18;
+const DOUBLE_TAP_DELAY_MS = 280;
+const PROFILE_FEEDBACK_DURATION_MS = 900;
 const VIEWABILITY_CONFIG = {
   viewAreaCoveragePercentThreshold: 50,
 };
@@ -50,12 +53,19 @@ const formatCount = (value: number) => {
   return `${value}`;
 };
 
-const HeartIcon = memo(function HeartIcon({ size = 30 }: { size?: number }) {
+const HeartIcon = memo(function HeartIcon({
+  size = 30,
+  filled = false,
+}: {
+  size?: number;
+  filled?: boolean;
+}) {
   return (
     <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
       <Path
         d="M16 27.2c-6.8-4.3-11-8.2-11-13.1 0-3.2 2.3-5.8 5.5-5.8 2 0 3.9 1 5 2.7 1.1-1.7 3-2.7 5-2.7 3.2 0 5.5 2.6 5.5 5.8 0 4.9-4.2 8.8-11 13.1Z"
-        stroke="#FFFFFF"
+        fill={filled ? '#FF4D6D' : 'none'}
+        stroke={filled ? '#FF4D6D' : '#FFFFFF'}
         strokeWidth={2}
         strokeLinejoin="round"
       />
@@ -83,16 +93,28 @@ const CommentIcon = memo(function CommentIcon({
 const ActionStat = memo(function ActionStat({
   icon,
   value,
+  onPress,
+  animatedStyle,
+  valueStyle,
 }: {
   icon: React.ReactNode;
   value: string;
+  onPress?: () => void;
+  animatedStyle?: object;
+  valueStyle?: object;
 }) {
-  return (
-    <View style={styles.actionStat}>
+  const content = (
+    <Animated.View style={[styles.actionStat, animatedStyle]}>
       <View style={styles.actionButton}>{icon}</View>
-      <Text style={styles.actionValue}>{value}</Text>
-    </View>
+      <Text style={[styles.actionValue, valueStyle]}>{value}</Text>
+    </Animated.View>
   );
+
+  if (onPress) {
+    return <Pressable onPress={onPress}>{content}</Pressable>;
+  }
+
+  return content;
 });
 
 const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
@@ -215,6 +237,152 @@ const FeedCard = memo(function FeedCard({
   bottomInset: number;
 }) {
   const [captionExpanded, setCaptionExpanded] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [following, setFollowing] = useState(false);
+  const [showProfileFeedback, setShowProfileFeedback] = useState(false);
+  const likeScale = useRef(new Animated.Value(1)).current;
+  const likeBurstScale = useRef(new Animated.Value(0.3)).current;
+  const likeBurstOpacity = useRef(new Animated.Value(0)).current;
+  const profileToastOpacity = useRef(new Animated.Value(0)).current;
+  const profileToastTranslateY = useRef(new Animated.Value(8)).current;
+  const profileScale = useRef(new Animated.Value(1)).current;
+  const lastTapTimestampRef = useRef(0);
+  const profileFeedbackTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const displayLikes = post.likes + (liked ? 1 : 0);
+
+  useEffect(() => {
+    return () => {
+      if (profileFeedbackTimeoutRef.current) {
+        clearTimeout(profileFeedbackTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const triggerLikeAnimation = useCallback(
+    (showBurst: boolean) => {
+      likeScale.setValue(0.84);
+      Animated.spring(likeScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 22,
+        bounciness: 11,
+      }).start();
+
+      if (!showBurst) {
+        return;
+      }
+
+      likeBurstScale.setValue(0.3);
+      likeBurstOpacity.setValue(0.92);
+      Animated.parallel([
+        Animated.spring(likeBurstScale, {
+          toValue: 1,
+          useNativeDriver: true,
+          speed: 18,
+          bounciness: 10,
+        }),
+        Animated.timing(likeBurstOpacity, {
+          toValue: 0,
+          duration: 420,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    },
+    [likeBurstOpacity, likeBurstScale, likeScale],
+  );
+
+  const handleLikeToggle = useCallback(() => {
+    setLiked((current) => {
+      const next = !current;
+
+      if (next) {
+        triggerLikeAnimation(false);
+      }
+
+      return next;
+    });
+  }, [triggerLikeAnimation]);
+
+  const handlePostTap = useCallback(() => {
+    const now = Date.now();
+
+    if (now - lastTapTimestampRef.current <= DOUBLE_TAP_DELAY_MS) {
+      lastTapTimestampRef.current = 0;
+
+      setLiked((current) => {
+        if (!current) {
+          triggerLikeAnimation(true);
+          return true;
+        }
+
+        triggerLikeAnimation(true);
+        return current;
+      });
+
+      return;
+    }
+
+    lastTapTimestampRef.current = now;
+  }, [triggerLikeAnimation]);
+
+  const handleProfilePress = useCallback(() => {
+    if (profileFeedbackTimeoutRef.current) {
+      clearTimeout(profileFeedbackTimeoutRef.current);
+    }
+
+    setShowProfileFeedback(true);
+    profileScale.setValue(0.96);
+    profileToastOpacity.setValue(0);
+    profileToastTranslateY.setValue(8);
+
+    Animated.parallel([
+      Animated.sequence([
+        Animated.spring(profileScale, {
+          toValue: 1.04,
+          useNativeDriver: true,
+          speed: 20,
+          bounciness: 10,
+        }),
+        Animated.spring(profileScale, {
+          toValue: 1,
+          useNativeDriver: true,
+          speed: 20,
+          bounciness: 8,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(profileToastOpacity, {
+          toValue: 1,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+        Animated.timing(profileToastTranslateY, {
+          toValue: 0,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+
+    profileFeedbackTimeoutRef.current = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(profileToastOpacity, {
+          toValue: 0,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+        Animated.timing(profileToastTranslateY, {
+          toValue: 8,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShowProfileFeedback(false);
+      });
+    }, PROFILE_FEEDBACK_DURATION_MS);
+  }, [profileScale, profileToastOpacity, profileToastTranslateY]);
 
   return (
     <View style={[styles.page, { height: itemHeight }]}>
@@ -228,7 +396,21 @@ const FeedCard = memo(function FeedCard({
             },
           ]}
         >
-          <MediaSurface post={post} index={index} />
+          <Pressable style={styles.mediaTapTarget} onPress={handlePostTap}>
+            <MediaSurface post={post} index={index} />
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.likeBurst,
+                {
+                  opacity: likeBurstOpacity,
+                  transform: [{ scale: likeBurstScale }],
+                },
+              ]}
+            >
+              <HeartIcon size={96} filled />
+            </Animated.View>
+          </Pressable>
 
           <View
             style={[
@@ -252,19 +434,63 @@ const FeedCard = memo(function FeedCard({
             ]}
           >
             <View style={styles.metaColumn}>
-              <View style={styles.userRow}>
-                <View
-                  style={[styles.avatar, { backgroundColor: post.avatarColor }]}
+              {showProfileFeedback ? (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.profileToast,
+                    {
+                      opacity: profileToastOpacity,
+                      transform: [{ translateY: profileToastTranslateY }],
+                    },
+                  ]}
                 >
-                  <Text style={styles.avatarText}>
-                    {post.username.slice(0, 2).toUpperCase()}
+                  <Text style={styles.profileToastText}>
+                    Previewing @{post.username}
                   </Text>
-                </View>
-                <View style={styles.userCopy}>
-                  <Text style={styles.username}>@{post.username}</Text>
-                </View>
-                <Pressable style={styles.followButton}>
-                  <Text style={styles.followButtonText}>Follow</Text>
+                </Animated.View>
+              ) : null}
+
+              <View style={styles.userRow}>
+                <Pressable onPress={handleProfilePress}>
+                  <Animated.View
+                    style={[
+                      styles.userIdentityGroup,
+                      {
+                        transform: [{ scale: profileScale }],
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.avatar,
+                        { backgroundColor: post.avatarColor },
+                      ]}
+                    >
+                      <Text style={styles.avatarText}>
+                        {post.username.slice(0, 2).toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={styles.userCopy}>
+                      <Text style={styles.username}>@{post.username}</Text>
+                    </View>
+                  </Animated.View>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.followButton,
+                    following ? styles.followButtonActive : null,
+                  ]}
+                  onPress={() => setFollowing((current) => !current)}
+                >
+                  <Text
+                    style={[
+                      styles.followButtonText,
+                      following ? styles.followButtonTextActive : null,
+                    ]}
+                  >
+                    {following ? 'Following' : 'Follow'}
+                  </Text>
                 </Pressable>
               </View>
 
@@ -290,8 +516,11 @@ const FeedCard = memo(function FeedCard({
 
             <View style={styles.actionsRail}>
               <ActionStat
-                icon={<HeartIcon />}
-                value={formatCount(post.likes)}
+                icon={<HeartIcon filled={liked} />}
+                value={formatCount(displayLikes)}
+                onPress={handleLikeToggle}
+                animatedStyle={{ transform: [{ scale: likeScale }] }}
+                valueStyle={liked ? styles.actionValueLiked : null}
               />
               <ActionStat
                 icon={<CommentIcon />}
@@ -486,6 +715,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
   },
+  mediaTapTarget: {
+    ...StyleSheet.absoluteFillObject,
+  },
   mediaScrim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.24)',
@@ -536,10 +768,29 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 14,
   },
+  profileToast: {
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(9,9,9,0.74)',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  profileToastText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 14,
+  },
+  userIdentityGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
   },
   avatar: {
     width: 44,
@@ -579,6 +830,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+  followButtonActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  followButtonTextActive: {
+    color: '#111111',
+  },
   caption: {
     color: '#FFFFFF',
     fontSize: 15,
@@ -617,6 +875,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     marginTop: 3,
+  },
+  actionValueLiked: {
+    color: '#FFCCD5',
+  },
+  likeBurst: {
+    position: 'absolute',
+    top: '42%',
+    left: '50%',
+    marginLeft: -48,
+    marginTop: -48,
   },
   debugOverlay: {
     position: 'absolute',
