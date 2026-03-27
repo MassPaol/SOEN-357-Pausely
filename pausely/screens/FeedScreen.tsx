@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { Image as ExpoImage } from 'expo-image';
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import {
   FlatList,
   ListRenderItemInfo,
@@ -18,6 +18,9 @@ import mockPosts, { MockPost } from '../data/mockPosts';
 
 const INITIAL_LOOP_COUNT = 2;
 const RECYCLING_THRESHOLD = 18;
+const VIEWABILITY_CONFIG = {
+  viewAreaCoveragePercentThreshold: 50,
+};
 const FALLBACK_BACKDROPS = [
   { base: '#1D3557', accent: '#4EA8DE' },
   { base: '#6B2D5C', accent: '#F4A261' },
@@ -88,6 +91,31 @@ const ActionStat = memo(function ActionStat({
     <View style={styles.actionStat}>
       <View style={styles.actionButton}>{icon}</View>
       <Text style={styles.actionValue}>{value}</Text>
+    </View>
+  );
+});
+
+const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
+  topInset,
+}: {
+  topInset: number;
+}) {
+  const postsViewed = useSession((state) => state.postsViewed);
+  const scrollCount = useSession((state) => state.scrollCount);
+
+  return (
+    <View
+      pointerEvents="none"
+      style={[
+        styles.debugOverlay,
+        {
+          top: topInset + 52,
+        },
+      ]}
+    >
+      <Text style={styles.debugLabel}>Debug Metrics</Text>
+      <Text style={styles.debugValue}>Scrolls: {scrollCount}</Text>
+      <Text style={styles.debugValue}>Posts viewed: {postsViewed}</Text>
     </View>
   );
 });
@@ -267,12 +295,6 @@ export default function FeedScreen() {
   const insets = useSafeAreaInsets();
   const itemHeight = height;
   const itemWidth = width;
-  const viewabilityConfig = useMemo(
-    () => ({
-      itemVisiblePercentThreshold: 75,
-    }),
-    [],
-  );
 
   const incrementPostsViewed = useSession(
     (state) => state.incrementPostsViewed,
@@ -282,7 +304,6 @@ export default function FeedScreen() {
   );
 
   const loopRef = useRef(INITIAL_LOOP_COUNT);
-  const lastVisibleIdRef = useRef<string | null>(null);
   const seenPostIdsRef = useRef(new Set<string>());
   const isExtendingRef = useRef(false);
   const [feedPosts, setFeedPosts] = useState<MockPost[]>(() =>
@@ -325,6 +346,10 @@ export default function FeedScreen() {
     [insets.bottom, insets.top, itemHeight, itemWidth],
   );
 
+  const handleScrollBeginDrag = useCallback(() => {
+    incrementScrollCount();
+  }, [incrementScrollCount]);
+
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       const activeItem = viewableItems
@@ -341,15 +366,6 @@ export default function FeedScreen() {
         seenPostIdsRef.current.add(activePost.id);
         incrementPostsViewed();
       }
-
-      if (
-        lastVisibleIdRef.current !== null &&
-        lastVisibleIdRef.current !== activePost.id
-      ) {
-        incrementScrollCount();
-      }
-
-      lastVisibleIdRef.current = activePost.id;
 
       if (
         (activeItem.index ?? 0) >=
@@ -376,9 +392,10 @@ export default function FeedScreen() {
         initialNumToRender={3}
         maxToRenderPerBatch={4}
         windowSize={5}
+        onScrollBeginDrag={handleScrollBeginDrag}
         onEndReached={extendFeed}
         onEndReachedThreshold={0.7}
-        viewabilityConfig={viewabilityConfig}
+        viewabilityConfig={VIEWABILITY_CONFIG}
         onViewableItemsChanged={onViewableItemsChanged}
         getItemLayout={(_, index) => ({
           length: itemHeight,
@@ -386,6 +403,7 @@ export default function FeedScreen() {
           index,
         })}
       />
+      {__DEV__ ? <DebugMetricsOverlay topInset={insets.top} /> : null}
     </View>
   );
 }
@@ -570,5 +588,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     marginTop: 3,
+  },
+  debugOverlay: {
+    position: 'absolute',
+    right: 12,
+    zIndex: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: 'rgba(5, 5, 5, 0.72)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  debugLabel: {
+    color: 'rgba(255,255,255,0.72)',
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  debugValue: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
   },
 });
