@@ -97,15 +97,18 @@ const ActionStat = memo(function ActionStat({
 
 const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
   topInset,
+  onEndSession,
+  sessionEnded,
 }: {
   topInset: number;
+  onEndSession: () => void;
+  sessionEnded: boolean;
 }) {
   const postsViewed = useSession((state) => state.postsViewed);
   const scrollCount = useSession((state) => state.scrollCount);
 
   return (
     <View
-      pointerEvents="none"
       style={[
         styles.debugOverlay,
         {
@@ -116,6 +119,18 @@ const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
       <Text style={styles.debugLabel}>Debug Metrics</Text>
       <Text style={styles.debugValue}>Scrolls: {scrollCount}</Text>
       <Text style={styles.debugValue}>Posts viewed: {postsViewed}</Text>
+      <Pressable
+        style={[
+          styles.debugEndSessionButton,
+          sessionEnded ? styles.debugEndSessionButtonDisabled : null,
+        ]}
+        onPress={onEndSession}
+        disabled={sessionEnded}
+      >
+        <Text style={styles.debugEndSessionButtonText}>
+          {sessionEnded ? 'Session Saved' : 'End Session'}
+        </Text>
+      </Pressable>
     </View>
   );
 });
@@ -302,6 +317,8 @@ export default function FeedScreen() {
   const incrementScrollCount = useSession(
     (state) => state.incrementScrollCount,
   );
+  const endSession = useSession((state) => state.endSession);
+  const actualEndTime = useSession((state) => state.actualEndTime);
 
   const loopRef = useRef(INITIAL_LOOP_COUNT);
   const seenPostIdsRef = useRef(new Set<string>());
@@ -349,6 +366,12 @@ export default function FeedScreen() {
   const handleScrollBeginDrag = useCallback(() => {
     incrementScrollCount();
   }, [incrementScrollCount]);
+
+  const handleDebugEndSession = useCallback(() => {
+    if (actualEndTime === null) {
+      endSession();
+    }
+  }, [actualEndTime, endSession]);
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -403,7 +426,13 @@ export default function FeedScreen() {
           index,
         })}
       />
-      {__DEV__ ? <DebugMetricsOverlay topInset={insets.top} /> : null}
+      {__DEV__ ? (
+        <DebugMetricsOverlay
+          topInset={insets.top}
+          onEndSession={handleDebugEndSession}
+          sessionEnded={actualEndTime !== null}
+        />
+      ) : null}
     </View>
   );
 }
@@ -613,5 +642,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 18,
+  },
+  debugEndSessionButton: {
+    marginTop: 10,
+    borderRadius: 999,
+    backgroundColor: '#F4A261',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  debugEndSessionButtonDisabled: {
+    backgroundColor: 'rgba(255,255,255,0.22)',
+  },
+  debugEndSessionButtonText: {
+    color: '#111111',
+    fontSize: 12,
+    fontWeight: '800',
   },
 });

@@ -44,3 +44,9 @@ yarn-error.*
 # JetBrains / IntelliJ
 .idea/
 *.iml
+
+# local exports
+exports/
+
+# Environment Variables
+.env
