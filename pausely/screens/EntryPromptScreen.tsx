@@ -13,10 +13,13 @@ import { useSession } from '../context/sessionStore';
 import { AppWheelPicker } from '../components/AppWheelPicker';
 import { AppTextArea } from '../components/AppTextArea';
 
-const DURATION_OPTIONS = Array.from({ length: 24 }, (_, i) => {
-  const minutes = (i + 1) * 5;
-  return { label: `${minutes} minutes`, value: minutes };
-});
+const DURATION_OPTIONS = [
+  { label: '1 minute', value: 1 },
+  ...Array.from({ length: 24 }, (_, i) => {
+    const minutes = (i + 1) * 5;
+    return { label: `${minutes} minutes`, value: minutes };
+  }),
+];
 
 const EntryPromptScreen = ({
   navigation,
