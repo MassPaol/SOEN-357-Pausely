@@ -16,9 +16,16 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Svg, { Path } from 'react-native-svg';
 import { useSession } from '../context/sessionStore';
 import mockPosts, { MockPost } from '../data/mockPosts';
+import useSessionTimer from '../hooks/useSessionTimer';
+import SessionPromptOverlay, {
+  type VisibleModal,
+} from '../components/SessionPromptOverlay';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
 const INITIAL_LOOP_COUNT = 2;
 const RECYCLING_THRESHOLD = 18;
@@ -120,6 +127,15 @@ const ActionStat = memo(function ActionStat({
   return content;
 });
 
+const HARD_CAP_MS = 600_000;
+
+function formatTimer(ms: number) {
+  const totalSeconds = Math.max(Math.ceil(ms / 1000), 0);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
   topInset,
   onEndSession,
@@ -131,6 +147,25 @@ const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
 }) {
   const postsViewed = useSession((state) => state.postsViewed);
   const scrollCount = useSession((state) => state.scrollCount);
+  const group = useSession((s) => s.group);
+  const sessionStartTime = useSession((s) => s.sessionStartTime);
+  const intendedDuration = useSession((s) => s.intendedDuration);
+  const actualEndTime = useSession((s) => s.actualEndTime);
+
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (!sessionStartTime || actualEndTime !== null) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [sessionStartTime, actualEndTime]);
+
+  const elapsed = sessionStartTime ? now - sessionStartTime : 0;
+  const duration = intendedDuration ?? 0;
+  const midLeft = duration / 2 - elapsed;
+  const endLeft = duration - elapsed;
+  const hardCapLeft = HARD_CAP_MS - elapsed;
+  const isExperimental = group === 'experimental';
 
   return (
     <View
@@ -142,8 +177,52 @@ const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
       ]}
     >
       <Text style={styles.debugLabel}>Debug Metrics</Text>
+      <Text style={styles.debugValue}>Group: {group ?? 'none'}</Text>
       <Text style={styles.debugValue}>Scrolls: {scrollCount}</Text>
       <Text style={styles.debugValue}>Posts viewed: {postsViewed}</Text>
+
+      {sessionStartTime && actualEndTime === null ? (
+        <>
+          <View style={styles.debugDivider} />
+          <Text style={styles.debugLabel}>Session</Text>
+          <Text style={styles.debugValue}>Elapsed: {formatTimer(elapsed)}</Text>
+          <Text
+            style={[
+              styles.debugTimerMain,
+              endLeft <= 60_000 && endLeft > 0 && styles.debugValueWarn,
+            ]}
+          >
+            Remaining: {endLeft <= 0 ? '0:00' : formatTimer(endLeft)}
+          </Text>
+        </>
+      ) : null}
+
+      {isExperimental && sessionStartTime && actualEndTime === null ? (
+        <>
+          <View style={styles.debugDivider} />
+          <Text style={styles.debugLabel}>Prompt Timers</Text>
+          <Text
+            style={[styles.debugValue, midLeft <= 0 && styles.debugValueFired]}
+          >
+            Mid: {midLeft <= 0 ? 'FIRED' : formatTimer(midLeft)}
+          </Text>
+          <Text
+            style={[styles.debugValue, endLeft <= 0 && styles.debugValueFired]}
+          >
+            End: {endLeft <= 0 ? 'FIRED' : formatTimer(endLeft)}
+          </Text>
+          <Text
+            style={[
+              styles.debugValue,
+              hardCapLeft <= 60_000 && hardCapLeft > 0 && styles.debugValueWarn,
+              hardCapLeft <= 0 && styles.debugValueFired,
+            ]}
+          >
+            Hard cap: {hardCapLeft <= 0 ? 'FIRED' : formatTimer(hardCapLeft)}
+          </Text>
+        </>
+      ) : null}
+
       <Pressable
         style={[
           styles.debugEndSessionButton,
@@ -543,6 +622,9 @@ export default function FeedScreen() {
   const itemHeight = height;
   const itemWidth = width;
 
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const incrementPostsViewed = useSession(
     (state) => state.incrementPostsViewed,
   );
@@ -551,6 +633,83 @@ export default function FeedScreen() {
   );
   const endSession = useSession((state) => state.endSession);
   const actualEndTime = useSession((state) => state.actualEndTime);
+  const intendedDuration = useSession((state) => state.intendedDuration);
+  const recordPromptDecision = useSession(
+    (state) => state.recordPromptDecision,
+  );
+
+  const [visibleModal, setVisibleModal] = useState<VisibleModal>(null);
+  const promptQueueRef = useRef<('mid' | 'endSession')[]>([]);
+  const visibleModalRef = useRef(visibleModal);
+  visibleModalRef.current = visibleModal;
+
+  const showOrQueue = useCallback((modal: 'mid' | 'endSession') => {
+    if (__DEV__)
+      console.log(
+        '[FeedScreen] showOrQueue:',
+        modal,
+        'current:',
+        visibleModalRef.current,
+      );
+    if (visibleModalRef.current === null) {
+      setVisibleModal(modal);
+    } else {
+      promptQueueRef.current.push(modal);
+    }
+  }, []);
+
+  const drainQueue = useCallback(() => {
+    const next = promptQueueRef.current.shift();
+    setVisibleModal(next ?? null);
+  }, []);
+
+  const onMidSession = useCallback(() => showOrQueue('mid'), [showOrQueue]);
+  const onEndSession = useCallback(
+    () => showOrQueue('endSession'),
+    [showOrQueue],
+  );
+  const onHardCap = useCallback(() => {
+    promptQueueRef.current = [];
+    setVisibleModal(null);
+    const { actualEndTime: aet } = useSession.getState();
+    if (aet === null) endSession();
+    navigation.reset({ index: 0, routes: [{ name: 'Questionnaire' }] });
+  }, [endSession, navigation]);
+
+  useSessionTimer({
+    intendedDuration: intendedDuration ?? 0,
+    onMidSession,
+    onEndSession,
+    onHardCap,
+  });
+
+  const handleContinue = useCallback(() => {
+    const current = visibleModalRef.current;
+    if (current === 'mid') recordPromptDecision('mid', 'continue');
+    else if (current === 'endSession')
+      recordPromptDecision('endSession', 'continue');
+    drainQueue();
+  }, [recordPromptDecision, drainQueue]);
+
+  const handleExit = useCallback(() => {
+    recordPromptDecision('mid', 'exit');
+    promptQueueRef.current = [];
+    setVisibleModal('exit');
+  }, [recordPromptDecision]);
+
+  const handleFinish = useCallback(() => {
+    recordPromptDecision('endSession', 'exit');
+    promptQueueRef.current = [];
+    const { actualEndTime: aet } = useSession.getState();
+    if (aet === null) endSession();
+    setVisibleModal('exit');
+  }, [recordPromptDecision, endSession]);
+
+  const handleExitTransitionComplete = useCallback(() => {
+    const { actualEndTime: aet } = useSession.getState();
+    if (aet === null) endSession();
+    navigation.reset({ index: 0, routes: [{ name: 'Questionnaire' }] });
+  }, [endSession, navigation]);
 
   const loopRef = useRef(INITIAL_LOOP_COUNT);
   const seenPostIdsRef = useRef(new Set<string>());
@@ -665,6 +824,13 @@ export default function FeedScreen() {
           sessionEnded={actualEndTime !== null}
         />
       ) : null}
+      <SessionPromptOverlay
+        visibleModal={visibleModal}
+        onContinue={handleContinue}
+        onExit={handleExit}
+        onFinish={handleFinish}
+        onExitTransitionComplete={handleExitTransitionComplete}
+      />
     </View>
   );
 }
@@ -929,5 +1095,25 @@ const styles = StyleSheet.create({
     color: '#111111',
     fontSize: 12,
     fontWeight: '800',
+  },
+  debugTimerMain: {
+    color: '#F4A261',
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 22,
+    fontVariant: ['tabular-nums'],
+  },
+  debugDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignSelf: 'stretch',
+    marginVertical: 6,
+  },
+  debugValueFired: {
+    color: 'rgba(255,255,255,0.35)',
+    textDecorationLine: 'line-through',
+  },
+  debugValueWarn: {
+    color: '#FF6B6B',
   },
 });
