@@ -6,11 +6,14 @@ import {
   FlatList,
   ListRenderItemInfo,
   Pressable,
+  StyleProp,
   StyleSheet,
   Text,
+  TextStyle,
   useWindowDimensions,
   View,
   ViewToken,
+  ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -100,8 +103,8 @@ const ActionStat = memo(function ActionStat({
   icon: React.ReactNode;
   value: string;
   onPress?: () => void;
-  animatedStyle?: object;
-  valueStyle?: object;
+  animatedStyle?: Animated.WithAnimatedValue<StyleProp<ViewStyle>>;
+  valueStyle?: StyleProp<TextStyle>;
 }) {
   const content = (
     <Animated.View style={[styles.actionStat, animatedStyle]}>
