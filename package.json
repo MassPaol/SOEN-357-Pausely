@@ -10,7 +10,8 @@
   },
   "scripts": {
     "prepare": "husky",
-    "lint": "eslint pausely/**"
+    "lint": "eslint pausely/**",
+    "export-server": "node scripts/session-csv-server.js"
   },
   "devDependencies": {
     "eslint": "^9.0.0",

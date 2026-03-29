@@ -40,3 +40,13 @@ yarn-error.*
 
 #VSCode
 .vscode/
+
+# JetBrains / IntelliJ
+.idea/
+*.iml
+
+# local exports
+exports/
+
+# Environment Variables
+.env
