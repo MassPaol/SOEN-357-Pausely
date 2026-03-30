@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,35 +12,58 @@ import { AppButton } from '../components/AppButton';
 import { useSession } from '../context/sessionStore';
 import { AppWheelPicker } from '../components/AppWheelPicker';
 import { AppTextArea } from '../components/AppTextArea';
+import { AppLogo } from '../components/AppLogo';
 
 const DURATION_OPTIONS = [
-  { label: '1 minute', value: 1 },
-  ...Array.from({ length: 24 }, (_, i) => {
-    const minutes = (i + 1) * 5;
-    return { label: `${minutes} minutes`, value: minutes };
-  }),
+  { label: '1 min', value: 1 },
+  { label: '2 min', value: 2 },
+  { label: '3 min', value: 3 },
+  { label: '4 min', value: 4 },
+  { label: '5 min', value: 5 },
 ];
 
 const EntryPromptScreen = ({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, 'EntryPrompt'>) => {
-  const { startSession, group } = useSession();
-  const [selectedMinutes, setSelectedMinutes] = useState(30);
+  const { startSession, group, sessionStartTime } = useSession();
+  const [selectedMinutes, setSelectedMinutes] = useState(2);
   const [goal, setGoal] = useState('');
+
+  const isReady = useMemo(() => goal.trim().length > 0, [goal]);
+
+  useEffect(() => {
+    if (sessionStartTime) {
+      navigation.navigate('Feed');
+      return;
+    }
+
+    if (group === 'control') {
+      const randomMinutes = Math.floor(Math.random() * 4) + 2;
+      startSession(randomMinutes * 60 * 1000, '');
+      navigation.navigate('Feed');
+    }
+  }, [group, navigation, sessionStartTime, startSession]);
 
   const handleBegin = () => {
     startSession(selectedMinutes * 60 * 1000, goal);
-    console.log(
-      'DEBUG: EntryPromptScreen.tsx -> Session state:',
-      useSession.getState(),
-    );
     navigation.navigate('Feed');
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-        <Text style={styles.title}>Set your intention</Text>
+        <View style={styles.brandRow}>
+          <AppLogo width={180} />
+        </View>
+        <Text style={styles.title}>Before you start...</Text>
+
+        <AppTextArea
+          label="What do you plan to do?"
+          value={goal}
+          onChangeText={setGoal}
+          placeholder="e.g. catch up on posts"
+          style={styles.field}
+        />
 
         <AppWheelPicker
           label="How long do you plan to use the app?"
@@ -50,15 +73,11 @@ const EntryPromptScreen = ({
           style={styles.field}
         />
 
-        <AppTextArea
-          label="What do you want to accomplish?"
-          value={goal}
-          onChangeText={setGoal}
-          placeholder="e.g. catch up on news, check in with friends..."
-          style={styles.field}
+        <AppButton
+          title="Start Session"
+          onPress={handleBegin}
+          disabled={!isReady}
         />
-
-        <AppButton title="Begin Session" onPress={handleBegin} />
       </View>
     </TouchableWithoutFeedback>
   );
@@ -71,11 +90,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'center',
   },
+  brandRow: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   title: {
-    fontSize: 22,
-    fontWeight: '500',
-    marginBottom: 32,
-    color: '#333',
+    fontSize: 24,
+    fontWeight: '600',
+    marginBottom: 28,
+    color: '#111',
+    textAlign: 'center',
   },
   field: {
     marginBottom: 24,
