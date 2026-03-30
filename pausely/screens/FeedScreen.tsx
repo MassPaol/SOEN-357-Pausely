@@ -310,6 +310,8 @@ const FeedCard = memo(function FeedCard({
   itemHeight,
   topInset,
   bottomInset,
+  onStopSession,
+  onOpenResearcherConfig,
 }: {
   post: MockPost;
   index: number;
@@ -317,6 +319,8 @@ const FeedCard = memo(function FeedCard({
   itemHeight: number;
   topInset: number;
   bottomInset: number;
+  onStopSession: () => void;
+  onOpenResearcherConfig: () => void;
 }) {
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -505,6 +509,14 @@ const FeedCard = memo(function FeedCard({
             <Text style={styles.chromeMuted}>Following</Text>
             <Text style={styles.chromeActive}>For You</Text>
             <View style={styles.liveDot} />
+            <Pressable
+              style={styles.stopButton}
+              onPress={onStopSession}
+              onLongPress={onOpenResearcherConfig}
+              delayLongPress={500}
+            >
+              <Text style={styles.stopButtonText}>Stop</Text>
+            </Pressable>
           </View>
 
           <View
@@ -634,6 +646,9 @@ export default function FeedScreen() {
   const endSession = useSession((state) => state.endSession);
   const actualEndTime = useSession((state) => state.actualEndTime);
   const intendedDuration = useSession((state) => state.intendedDuration);
+  const pauseSession = useSession((state) => state.pauseSession);
+  const resumeSession = useSession((state) => state.resumeSession);
+  const setMidPromptShownAt = useSession((state) => state.setMidPromptShownAt);
   const recordPromptDecision = useSession(
     (state) => state.recordPromptDecision,
   );
@@ -643,25 +658,51 @@ export default function FeedScreen() {
   const visibleModalRef = useRef(visibleModal);
   visibleModalRef.current = visibleModal;
 
-  const showOrQueue = useCallback((modal: 'mid' | 'endSession') => {
-    if (__DEV__)
-      console.log(
-        '[FeedScreen] showOrQueue:',
-        modal,
-        'current:',
-        visibleModalRef.current,
-      );
-    if (visibleModalRef.current === null) {
-      setVisibleModal(modal);
-    } else {
-      promptQueueRef.current.push(modal);
+  useEffect(() => {
+    if (visibleModal !== null) {
+      pauseSession();
+      return;
     }
-  }, []);
+
+    resumeSession();
+  }, [pauseSession, resumeSession, visibleModal]);
+
+  const showModal = useCallback(
+    (modal: 'mid' | 'endSession' | 'exit') => {
+      if (modal === 'mid') {
+        setMidPromptShownAt(Date.now());
+      }
+      setVisibleModal(modal);
+    },
+    [setMidPromptShownAt],
+  );
+
+  const showOrQueue = useCallback(
+    (modal: 'mid' | 'endSession') => {
+      if (__DEV__)
+        console.log(
+          '[FeedScreen] showOrQueue:',
+          modal,
+          'current:',
+          visibleModalRef.current,
+        );
+      if (visibleModalRef.current === null) {
+        showModal(modal);
+      } else {
+        promptQueueRef.current.push(modal);
+      }
+    },
+    [showModal],
+  );
 
   const drainQueue = useCallback(() => {
     const next = promptQueueRef.current.shift();
-    setVisibleModal(next ?? null);
-  }, []);
+    if (next) {
+      showModal(next);
+      return;
+    }
+    setVisibleModal(null);
+  }, [showModal]);
 
   const onMidSession = useCallback(() => showOrQueue('mid'), [showOrQueue]);
   const onEndSession = useCallback(
@@ -683,33 +724,43 @@ export default function FeedScreen() {
     onHardCap,
   });
 
-  const handleContinue = useCallback(() => {
-    const current = visibleModalRef.current;
-    if (current === 'mid') recordPromptDecision('mid', 'continue');
-    else if (current === 'endSession')
-      recordPromptDecision('endSession', 'continue');
+  const handleMidContinue = useCallback(() => {
+    recordPromptDecision('mid', 'continue');
     drainQueue();
   }, [recordPromptDecision, drainQueue]);
 
-  const handleExit = useCallback(() => {
+  const handleMidExit = useCallback(() => {
     recordPromptDecision('mid', 'exit');
     promptQueueRef.current = [];
-    setVisibleModal('exit');
-  }, [recordPromptDecision]);
+    showModal('exit');
+  }, [recordPromptDecision, showModal]);
 
-  const handleFinish = useCallback(() => {
+  const handleEndContinue = useCallback(() => {
+    recordPromptDecision('endSession', 'continue');
+    drainQueue();
+  }, [recordPromptDecision, drainQueue]);
+
+  const handleEndExit = useCallback(() => {
     recordPromptDecision('endSession', 'exit');
     promptQueueRef.current = [];
     const { actualEndTime: aet } = useSession.getState();
     if (aet === null) endSession();
-    setVisibleModal('exit');
-  }, [recordPromptDecision, endSession]);
+    setVisibleModal(null);
+    navigation.reset({ index: 0, routes: [{ name: 'Questionnaire' }] });
+  }, [recordPromptDecision, endSession, navigation]);
 
-  const handleExitTransitionComplete = useCallback(() => {
+  const handleExitContinue = useCallback(() => {
+    recordPromptDecision('exit', 'continue');
+    setVisibleModal(null);
+  }, [recordPromptDecision]);
+
+  const handleExitEnd = useCallback(() => {
+    recordPromptDecision('exit', 'exit');
     const { actualEndTime: aet } = useSession.getState();
     if (aet === null) endSession();
+    setVisibleModal(null);
     navigation.reset({ index: 0, routes: [{ name: 'Questionnaire' }] });
-  }, [endSession, navigation]);
+  }, [recordPromptDecision, endSession, navigation]);
 
   const loopRef = useRef(INITIAL_LOOP_COUNT);
   const seenPostIdsRef = useRef(new Set<string>());
@@ -740,6 +791,15 @@ export default function FeedScreen() {
     });
   }, []);
 
+  const handleOpenResearcherConfig = useCallback(() => {
+    navigation.navigate('ResearcherConfig');
+  }, [navigation]);
+
+  const handleStopSession = useCallback(() => {
+    promptQueueRef.current = [];
+    showModal('exit');
+  }, [showModal]);
+
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<MockPost>) => (
       <FeedCard
@@ -749,9 +809,18 @@ export default function FeedScreen() {
         itemHeight={itemHeight}
         topInset={insets.top}
         bottomInset={insets.bottom}
+        onStopSession={handleStopSession}
+        onOpenResearcherConfig={handleOpenResearcherConfig}
       />
     ),
-    [insets.bottom, insets.top, itemHeight, itemWidth],
+    [
+      handleOpenResearcherConfig,
+      handleStopSession,
+      insets.bottom,
+      insets.top,
+      itemHeight,
+      itemWidth,
+    ],
   );
 
   const handleScrollBeginDrag = useCallback(() => {
@@ -826,10 +895,12 @@ export default function FeedScreen() {
       ) : null}
       <SessionPromptOverlay
         visibleModal={visibleModal}
-        onContinue={handleContinue}
-        onExit={handleExit}
-        onFinish={handleFinish}
-        onExitTransitionComplete={handleExitTransitionComplete}
+        onMidContinue={handleMidContinue}
+        onMidExit={handleMidExit}
+        onEndContinue={handleEndContinue}
+        onEndExit={handleEndExit}
+        onExitContinue={handleExitContinue}
+        onExitEnd={handleExitEnd}
       />
     </View>
   );
@@ -873,6 +944,23 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: '#F4A261',
     marginLeft: 10,
+  },
+  stopButton: {
+    position: 'absolute',
+    right: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  stopButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
   },
   mediaFrame: {
     flex: 1,
