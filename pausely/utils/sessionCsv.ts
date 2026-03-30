@@ -1,7 +1,7 @@
 export type PromptDecisions = {
   mid: 'continue' | 'exit' | null;
   endSession: 'continue' | 'exit' | null;
-  exit: null;
+  exit: 'continue' | 'exit' | null;
 };
 
 export type SessionExportData = {
@@ -13,7 +13,14 @@ export type SessionExportData = {
   actualEndTime: number | null;
   postsViewed: number;
   scrollCount: number;
+  midPromptShownAt: number | null;
   midSessionEstimate: number | null;
+  midSessionGoalStatus: string | null;
+  midSessionRecall: string | null;
+  endSessionGoalStatus: string | null;
+  endSessionFeeling: string | null;
+  exitReason: string | null;
+  exitGoalStatus: string | null;
   promptDecisions: PromptDecisions;
   questionnaireResponses: object;
 };
@@ -29,9 +36,19 @@ const CSV_HEADERS = [
   'actual_end_time_iso',
   'posts_viewed',
   'scroll_count',
+  'mid_prompt_shown_at_ms',
+  'mid_prompt_shown_at_iso',
   'mid_session_estimate',
+  'mid_session_goal_status',
+  'mid_session_recall',
   'prompt_mid_decision',
   'prompt_end_session_decision',
+  'prompt_exit_decision',
+  'end_session_goal_status',
+  'end_session_feeling',
+  'exit_reason',
+  'exit_goal_status',
+  'overrun_duration_ms',
   'questionnaire_responses_json',
 ] as const;
 
@@ -52,6 +69,15 @@ export const buildSessionCsvHeader = () =>
   CSV_HEADERS.map((header) => csvEscape(header)).join(',');
 
 export const buildSessionCsvRow = (session: SessionExportData) => {
+  const overrunDuration =
+    session.actualEndTime !== null &&
+    session.sessionStartTime !== null &&
+    session.intendedDuration !== null
+      ? session.actualEndTime -
+        session.sessionStartTime -
+        session.intendedDuration
+      : null;
+
   const row = [
     session.participantID,
     session.group,
@@ -63,9 +89,19 @@ export const buildSessionCsvRow = (session: SessionExportData) => {
     toIsoString(session.actualEndTime),
     session.postsViewed,
     session.scrollCount,
+    session.midPromptShownAt,
+    toIsoString(session.midPromptShownAt),
     session.midSessionEstimate,
+    session.midSessionGoalStatus,
+    session.midSessionRecall,
     session.promptDecisions.mid,
     session.promptDecisions.endSession,
+    session.promptDecisions.exit,
+    session.endSessionGoalStatus,
+    session.endSessionFeeling,
+    session.exitReason,
+    session.exitGoalStatus,
+    overrunDuration,
     JSON.stringify(session.questionnaireResponses),
   ];
 

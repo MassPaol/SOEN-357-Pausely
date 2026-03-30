@@ -18,6 +18,8 @@ export default function useSessionTimer({
 }: UseSessionTimerArgs) {
   const group = useSession((s) => s.group);
   const sessionStartTime = useSession((s) => s.sessionStartTime);
+  const pauseStartedAt = useSession((s) => s.pauseStartedAt);
+  const totalPausedMs = useSession((s) => s.totalPausedMs);
 
   const midTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const endTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,7 +45,7 @@ export default function useSessionTimer({
   };
 
   useEffect(() => {
-    if (group !== 'experimental' || !sessionStartTime || !intendedDuration) {
+    if (!sessionStartTime || !intendedDuration) {
       return;
     }
 
@@ -54,7 +56,9 @@ export default function useSessionTimer({
     sessionEndedRef.current = false;
     firedRef.current = { mid: false, end: false, hardCap: false };
 
-    const elapsed = Date.now() - sessionStartTime;
+    const activePauseMs = pauseStartedAt ? Date.now() - pauseStartedAt : 0;
+    const elapsed =
+      Date.now() - sessionStartTime - totalPausedMs - activePauseMs;
     const midDelay = intendedDuration / 2 - elapsed;
     const endDelay = intendedDuration - elapsed;
     const hardCapDelay = HARD_CAP_MS - elapsed;
@@ -91,16 +95,24 @@ export default function useSessionTimer({
       onHardCapRef.current();
     };
 
-    if (midDelay <= 0) {
-      fireMid();
-    } else {
-      midTimerRef.current = setTimeout(fireMid, midDelay);
+    if (pauseStartedAt) {
+      if (__DEV__) console.log('[useSessionTimer] paused, clearing timers');
+      clearAllTimers();
+      return;
     }
 
-    if (endDelay <= 0) {
-      fireEnd();
-    } else {
-      endTimerRef.current = setTimeout(fireEnd, endDelay);
+    if (group === 'experimental') {
+      if (midDelay <= 0) {
+        fireMid();
+      } else {
+        midTimerRef.current = setTimeout(fireMid, midDelay);
+      }
+
+      if (endDelay <= 0) {
+        fireEnd();
+      } else {
+        endTimerRef.current = setTimeout(fireEnd, endDelay);
+      }
     }
 
     if (hardCapDelay <= 0) {
@@ -110,7 +122,13 @@ export default function useSessionTimer({
     }
 
     return clearAllTimers;
-  }, [group, sessionStartTime, intendedDuration]);
+  }, [
+    group,
+    sessionStartTime,
+    intendedDuration,
+    pauseStartedAt,
+    totalPausedMs,
+  ]);
 
   useEffect(() => {
     const unsubscribe = useSession.subscribe((state, prev) => {

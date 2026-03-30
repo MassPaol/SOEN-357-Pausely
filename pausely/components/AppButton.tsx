@@ -10,6 +10,7 @@ import {
 interface AppButtonProps {
   title: string;
   onPress: () => void;
+  disabled?: boolean;
   style?: ViewStyle; // Allows overriding container style
   textStyle?: TextStyle; // Allows overriding text style
 }
@@ -17,16 +18,22 @@ interface AppButtonProps {
 export const AppButton = ({
   title,
   onPress,
+  disabled = false,
   style,
   textStyle,
 }: AppButtonProps) => {
   return (
     <TouchableOpacity
-      style={[styles.button, style]}
+      style={[styles.button, disabled ? styles.buttonDisabled : null, style]}
       onPress={onPress}
+      disabled={disabled}
       activeOpacity={0.7}
     >
-      <Text style={[styles.text, textStyle]}>{title}</Text>
+      <Text
+        style={[styles.text, disabled ? styles.textDisabled : null, textStyle]}
+      >
+        {title}
+      </Text>
     </TouchableOpacity>
   );
 };
@@ -41,9 +48,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: 10,
   },
+  buttonDisabled: {
+    opacity: 0.45,
+  },
   text: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  textDisabled: {
+    color: '#FFFFFF',
   },
 });
