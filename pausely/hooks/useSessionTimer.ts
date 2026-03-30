@@ -27,6 +27,7 @@ export default function useSessionTimer({
 
   const firedRef = useRef({ mid: false, end: false, hardCap: false });
   const sessionEndedRef = useRef(false);
+  const lastSessionStartRef = useRef<number | null>(null);
 
   const onMidSessionRef = useRef(onMidSession);
   const onEndSessionRef = useRef(onEndSession);
@@ -53,8 +54,11 @@ export default function useSessionTimer({
       return;
     }
 
-    sessionEndedRef.current = false;
-    firedRef.current = { mid: false, end: false, hardCap: false };
+    if (lastSessionStartRef.current !== sessionStartTime) {
+      lastSessionStartRef.current = sessionStartTime;
+      sessionEndedRef.current = false;
+      firedRef.current = { mid: false, end: false, hardCap: false };
+    }
 
     const activePauseMs = pauseStartedAt ? Date.now() - pauseStartedAt : 0;
     const elapsed =

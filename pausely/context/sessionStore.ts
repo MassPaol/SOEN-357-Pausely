@@ -155,7 +155,12 @@ export const useSession = create<SessionState & SessionActions>((set) => ({
   saveQuestionnaireResponse: (responses) =>
     set({ questionnaireResponses: responses }),
 
-  resetSession: () => set(initialState),
+  resetSession: () =>
+    set((state) => ({
+      ...initialState,
+      participantID: state.participantID,
+      group: state.group,
+    })),
 
   setParticipant: (participantID, group) => set({ participantID, group }),
 
