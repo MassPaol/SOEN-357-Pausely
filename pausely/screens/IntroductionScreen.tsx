@@ -59,7 +59,10 @@ const IntroductionScreen = ({
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Welcome to the Pausely Study</Text>
+        <Text style={styles.title}>
+          Welcome to the <Text style={styles.logoP}>p</Text>
+          <Text style={styles.logoAusely}>ausely</Text> Study
+        </Text>
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Introduction</Text>
@@ -149,6 +152,16 @@ const styles = StyleSheet.create({
     color: '#1c1c1c',
     textAlign: 'center',
     marginBottom: 20,
+  },
+  logoP: {
+    color: '#f2a84e',
+    fontSize: 32,
+    fontWeight: '500',
+  },
+  logoAusely: {
+    color: '#333',
+    fontSize: 32,
+    fontWeight: '400',
   },
   sectionCard: {
     borderRadius: 16,

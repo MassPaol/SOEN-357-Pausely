@@ -12,7 +12,6 @@ import { AppButton } from '../components/AppButton';
 import { useSession } from '../context/sessionStore';
 import { AppWheelPicker } from '../components/AppWheelPicker';
 import { AppTextArea } from '../components/AppTextArea';
-import { AppLogo } from '../components/AppLogo';
 
 const DURATION_OPTIONS = [
   { label: '1 min', value: 1 },
@@ -53,9 +52,6 @@ const EntryPromptScreen = ({
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-        <View style={styles.brandRow}>
-          <AppLogo width={180} />
-        </View>
         <Text style={styles.title}>Before you start...</Text>
 
         <AppTextArea
@@ -90,10 +86,6 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#fff',
     justifyContent: 'center',
-  },
-  brandRow: {
-    alignItems: 'center',
-    marginBottom: 20,
   },
   title: {
     fontSize: 24,
