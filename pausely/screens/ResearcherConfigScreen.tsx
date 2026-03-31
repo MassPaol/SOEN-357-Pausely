@@ -10,7 +10,7 @@ const ResearcherConfigScreen = ({
   const { group, setGroup } = useSession();
 
   const handleDone = () => {
-    navigation.reset({ index: 0, routes: [{ name: 'EntryPrompt' }] });
+    navigation.reset({ index: 0, routes: [{ name: 'Introduction' }] });
   };
 
   return (

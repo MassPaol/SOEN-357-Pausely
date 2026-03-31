@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import FeedScreen from '../screens/FeedScreen';
 import EntryPromptScreen from '../screens/EntryPromptScreen';
+import IntroductionScreen from '../screens/IntroductionScreen';
 import ExitPromptScreen from '../screens/ExitPromptScreen';
 import MidSessionPromptScreen from '../screens/MidSessionPromptScreen';
 import QuestionnaireScreen from '../screens/QuestionnaireScreen';
@@ -13,6 +14,7 @@ import { AppLogo } from '../components/AppLogo';
 
 export type RootStackParamList = {
   Feed: undefined;
+  Introduction: undefined;
   EntryPrompt: undefined;
   ExitPrompt: undefined;
   MidSessionPrompt: undefined;
@@ -50,6 +52,7 @@ export default function AppNavigator() {
         component={FeedScreen}
         options={{ headerShown: false }}
       />
+      <Stack.Screen name="Introduction" component={IntroductionScreen} />
       <Stack.Screen name="EntryPrompt" component={EntryPromptScreen} />
       <Stack.Screen name="ExitPrompt" component={ExitPromptScreen} />
       <Stack.Screen
