@@ -15,10 +15,15 @@ import { AppTextArea } from '../components/AppTextArea';
 
 const DURATION_OPTIONS = [
   { label: '1 min', value: 1 },
-  { label: '2 min', value: 2 },
-  { label: '3 min', value: 3 },
-  { label: '4 min', value: 4 },
-  { label: '5 min', value: 5 },
+  { label: '2 mins', value: 2 },
+  { label: '3 mins', value: 3 },
+  { label: '4 mins', value: 4 },
+  { label: '5 mins', value: 5 },
+  { label: '6 mins', value: 6 },
+  { label: '7 mins', value: 7 },
+  { label: '8 mins', value: 8 },
+  { label: '9 mins', value: 9 },
+  { label: '10 mins', value: 10 },
 ];
 
 const EntryPromptScreen = ({
