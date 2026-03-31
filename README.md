@@ -59,19 +59,32 @@ Follow these steps to set up the project locally:
    cd pausely
    ```
 
-6. **Start the development server:**
+6. **Choose how you want to run the app from the `pausely` directory:**
+
+   **Run in non-dev mode (final prototype):**
+
    ```bash
-   npx expo start
+   npm run start
    ```
+
+   Use this when you want to test or demo the final prototype experience. In this mode, the app runs without Expo dev mode, so the debug overlay does not appear.
+
+   **Run in dev mode:**
+
+   ```bash
+   npm run start:dev
+   ```
+
+   Use this when you want the in-app debug overlay for testing prompt timing and session behavior.
 
 ## How to Run the App
 
-Once you run `npx expo start`, Metro Bundler will start and display a QR code in the terminal.
+Once you run one of the start commands above, Metro Bundler will start and display a QR code in the terminal.
 > Note: Ensure that your directory is pausely
 
 If you want completed session data exported to CSV, keep `npm run export-server` running in a separate terminal at the repository root while using the app.
 
 - **Physical Device (Recommended):** Download the **Expo Go** app on your iOS or Android device. Scan the QR code (using the Camera app on iOS or the Expo Go app on Android) to open the project.
-- **Web Browser:** Press `w` in the terminal to launch the app in your default web browser.
-- **iOS Simulator:** Press `i` in the terminal (Requires macOS with Xcode installed).
-- **Android Emulator:** Press `a` in the terminal (Requires Android Studio and a configured virtual device).
+- **Web Browser:** Use `npm run web` or `npm run web:dev`.
+- **iOS Simulator:** Use `npm run ios` or `npm run ios:dev` (requires macOS with Xcode installed).
+- **Android Emulator:** Use `npm run android` or `npm run android:dev` (requires Android Studio and a configured virtual device).
