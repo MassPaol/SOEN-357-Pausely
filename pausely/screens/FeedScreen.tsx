@@ -151,6 +151,8 @@ const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
   const sessionStartTime = useSession((s) => s.sessionStartTime);
   const intendedDuration = useSession((s) => s.intendedDuration);
   const actualEndTime = useSession((s) => s.actualEndTime);
+  const pauseStartedAt = useSession((s) => s.pauseStartedAt);
+  const totalPausedMs = useSession((s) => s.totalPausedMs);
 
   const [now, setNow] = useState(Date.now());
 
@@ -160,7 +162,10 @@ const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
     return () => clearInterval(id);
   }, [sessionStartTime, actualEndTime]);
 
-  const elapsed = sessionStartTime ? now - sessionStartTime : 0;
+  const activePauseMs = pauseStartedAt ? now - pauseStartedAt : 0;
+  const elapsed = sessionStartTime
+    ? now - sessionStartTime - totalPausedMs - activePauseMs
+    : 0;
   const duration = intendedDuration ?? 0;
   const midLeft = duration / 2 - elapsed;
   const endLeft = duration - elapsed;
