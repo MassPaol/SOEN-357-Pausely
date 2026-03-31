@@ -224,7 +224,6 @@ function MidPromptContent({
 }) {
   return (
     <>
-      <Text style={styles.icon}>⏸️</Text>
       <Text style={styles.title}>Quick check-in</Text>
 
       <Text style={styles.question}>
@@ -318,7 +317,6 @@ function EndPromptContent({
 
   return (
     <>
-      <Text style={styles.icon}>⏰</Text>
       <Text style={styles.title}>Your time is up!</Text>
       <Text style={styles.body}>{intendedCopy}</Text>
 
@@ -387,7 +385,6 @@ function ExitPromptContent({
 }) {
   return (
     <>
-      <Text style={styles.icon}>👋</Text>
       <Text style={styles.title}>Leaving so soon?</Text>
 
       <Text style={styles.question}>Why are you stopping?</Text>
