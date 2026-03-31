@@ -20,6 +20,7 @@ const ResultsScreen = ({
 }: NativeStackScreenProps<RootStackParamList, 'Results'>) => {
   const {
     group,
+    intendedDuration,
     actualDurationMs,
     overrunDurationMs,
     postsViewed,
@@ -86,20 +87,43 @@ const ResultsScreen = ({
         </View>
 
         <View style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Duration</Text>
-            <Text style={styles.summaryValue}>
-              {formatMinutes(actualDurationMs)}
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Posts viewed</Text>
-            <Text style={styles.summaryValue}>{postsViewed}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Number of scrolls</Text>
-            <Text style={styles.summaryValue}>{scrollCount}</Text>
-          </View>
+          {group === 'experimental' ? (
+            <>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Intended duration</Text>
+                <Text style={styles.summaryValue}>
+                  {formatMinutes(intendedDuration)}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Actual duration</Text>
+                <Text style={styles.summaryValue}>
+                  {formatMinutes(actualDurationMs)}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Posts viewed</Text>
+                <Text style={styles.summaryValue}>{postsViewed}</Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Duration</Text>
+                <Text style={styles.summaryValue}>
+                  {formatMinutes(actualDurationMs)}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Posts viewed</Text>
+                <Text style={styles.summaryValue}>{postsViewed}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Number of scrolls</Text>
+                <Text style={styles.summaryValue}>{scrollCount}</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {group === 'experimental' && overrunMinutes !== null ? (
