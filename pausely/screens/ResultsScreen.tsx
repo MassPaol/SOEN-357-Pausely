@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { AppButton } from '../components/AppButton';
 import { useSession } from '../context/sessionStore';
+import { useSessionCsvExport } from '../hooks/useSessionCsvExport';
 
 const formatMinutes = (valueMs: number | null) => {
   if (valueMs === null) {
@@ -20,35 +21,28 @@ const ResultsScreen = ({
   const {
     group,
     intendedDuration,
-    sessionStartTime,
-    actualEndTime,
-    totalPausedMs,
+    actualDurationMs,
+    overrunDurationMs,
     postsViewed,
     resetSession,
     startSession,
   } = useSession();
-
-  const actualDurationMs = useMemo(() => {
-    if (actualEndTime === null || sessionStartTime === null) {
-      return null;
-    }
-
-    const elapsed = actualEndTime - sessionStartTime - totalPausedMs;
-    return Math.max(0, elapsed);
-  }, [actualEndTime, sessionStartTime, totalPausedMs]);
+  const { exportSessionCsv, canExportSessionCsv } = useSessionCsvExport();
+  const [isExporting, setIsExporting] = useState(false);
+  const [hasExported, setHasExported] = useState(false);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   const overrunMinutes = useMemo(() => {
-    if (actualDurationMs === null || intendedDuration === null) {
+    if (overrunDurationMs === null || intendedDuration === null) {
       return null;
     }
 
-    const diff = actualDurationMs - intendedDuration;
-    if (diff <= 0) {
+    if (overrunDurationMs <= 0) {
       return null;
     }
 
-    return Math.max(0, Math.round(diff / 60000));
-  }, [actualDurationMs, intendedDuration]);
+    return Math.max(0, Math.round(overrunDurationMs / 60000));
+  }, [intendedDuration, overrunDurationMs]);
 
   const handleStartNewSession = () => {
     if (group === 'control') {
@@ -60,6 +54,32 @@ const ResultsScreen = ({
 
     resetSession();
     navigation.reset({ index: 0, routes: [{ name: 'EntryPrompt' }] });
+  };
+
+  const handleExportData = async () => {
+    if (isExporting) {
+      return;
+    }
+
+    setIsExporting(true);
+    setExportMessage(null);
+
+    try {
+      const exported = await exportSessionCsv();
+      setHasExported(exported);
+      setExportMessage(
+        exported
+          ? 'Export complete'
+          : 'Export unavailable. Check the local export server configuration.',
+      );
+    } catch {
+      setHasExported(false);
+      setExportMessage(
+        'Export failed. Check that the local export server is running.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -102,13 +122,28 @@ const ResultsScreen = ({
         />
       </View>
 
-      <TouchableOpacity
-        style={styles.exportLink}
-        onPress={() => undefined}
-        activeOpacity={0.6}
-      >
-        <Text style={styles.exportText}>Export data</Text>
-      </TouchableOpacity>
+      {!hasExported ? (
+        <TouchableOpacity
+          style={styles.exportLink}
+          onPress={handleExportData}
+          activeOpacity={0.6}
+          disabled={isExporting}
+        >
+          <Text
+            style={[
+              styles.exportText,
+              !canExportSessionCsv || isExporting
+                ? styles.exportTextDisabled
+                : null,
+            ]}
+          >
+            {isExporting ? 'Exporting data...' : 'Export data'}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+      {exportMessage ? (
+        <Text style={styles.exportStatus}>{exportMessage}</Text>
+      ) : null}
     </View>
   );
 };
@@ -185,6 +220,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     textDecorationLine: 'underline',
+  },
+  exportTextDisabled: {
+    opacity: 0.55,
+  },
+  exportStatus: {
+    marginTop: -6,
+    marginBottom: 8,
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#777',
   },
 });
 

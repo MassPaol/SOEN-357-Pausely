@@ -138,12 +138,8 @@ function formatTimer(ms: number) {
 
 const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
   topInset,
-  onEndSession,
-  sessionEnded,
 }: {
   topInset: number;
-  onEndSession: () => void;
-  sessionEnded: boolean;
 }) {
   const postsViewed = useSession((state) => state.postsViewed);
   const scrollCount = useSession((state) => state.scrollCount);
@@ -227,19 +223,6 @@ const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
           </Text>
         </>
       ) : null}
-
-      <Pressable
-        style={[
-          styles.debugEndSessionButton,
-          sessionEnded ? styles.debugEndSessionButtonDisabled : null,
-        ]}
-        onPress={onEndSession}
-        disabled={sessionEnded}
-      >
-        <Text style={styles.debugEndSessionButtonText}>
-          {sessionEnded ? 'Session Saved' : 'End Session'}
-        </Text>
-      </Pressable>
     </View>
   );
 });
@@ -649,7 +632,6 @@ export default function FeedScreen() {
     (state) => state.incrementScrollCount,
   );
   const endSession = useSession((state) => state.endSession);
-  const actualEndTime = useSession((state) => state.actualEndTime);
   const intendedDuration = useSession((state) => state.intendedDuration);
   const pauseSession = useSession((state) => state.pauseSession);
   const resumeSession = useSession((state) => state.resumeSession);
@@ -748,8 +730,11 @@ export default function FeedScreen() {
   const handleEndExit = useCallback(() => {
     recordPromptDecision('endSession', 'exit');
     promptQueueRef.current = [];
-    const { actualEndTime: aet } = useSession.getState();
-    if (aet === null) endSession();
+    const { actualEndTime: aet, pauseStartedAt: pausedAt } =
+      useSession.getState();
+    if (aet === null) {
+      endSession(pausedAt ?? undefined);
+    }
     setVisibleModal(null);
     navigation.reset({ index: 0, routes: [{ name: 'Questionnaire' }] });
   }, [recordPromptDecision, endSession, navigation]);
@@ -761,8 +746,11 @@ export default function FeedScreen() {
 
   const handleExitEnd = useCallback(() => {
     recordPromptDecision('exit', 'exit');
-    const { actualEndTime: aet } = useSession.getState();
-    if (aet === null) endSession();
+    const { actualEndTime: aet, pauseStartedAt: pausedAt } =
+      useSession.getState();
+    if (aet === null) {
+      endSession(pausedAt ?? undefined);
+    }
     setVisibleModal(null);
     navigation.reset({ index: 0, routes: [{ name: 'Questionnaire' }] });
   }, [recordPromptDecision, endSession, navigation]);
@@ -802,8 +790,9 @@ export default function FeedScreen() {
 
   const handleStopSession = useCallback(() => {
     promptQueueRef.current = [];
+    pauseSession();
     showModal('exit');
-  }, [showModal]);
+  }, [pauseSession, showModal]);
 
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<MockPost>) => (
@@ -831,12 +820,6 @@ export default function FeedScreen() {
   const handleScrollBeginDrag = useCallback(() => {
     incrementScrollCount();
   }, [incrementScrollCount]);
-
-  const handleDebugEndSession = useCallback(() => {
-    if (actualEndTime === null) {
-      endSession();
-    }
-  }, [actualEndTime, endSession]);
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -891,13 +874,7 @@ export default function FeedScreen() {
           index,
         })}
       />
-      {__DEV__ ? (
-        <DebugMetricsOverlay
-          topInset={insets.top}
-          onEndSession={handleDebugEndSession}
-          sessionEnded={actualEndTime !== null}
-        />
-      ) : null}
+      {__DEV__ ? <DebugMetricsOverlay topInset={insets.top} /> : null}
       <SessionPromptOverlay
         visibleModal={visibleModal}
         onMidContinue={handleMidContinue}
@@ -1172,22 +1149,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 18,
-  },
-  debugEndSessionButton: {
-    marginTop: 10,
-    borderRadius: 999,
-    backgroundColor: '#F4A261',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  debugEndSessionButtonDisabled: {
-    backgroundColor: 'rgba(255,255,255,0.22)',
-  },
-  debugEndSessionButtonText: {
-    color: '#111111',
-    fontSize: 12,
-    fontWeight: '800',
   },
   debugTimerMain: {
     color: '#F4A261',

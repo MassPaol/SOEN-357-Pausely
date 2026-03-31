@@ -21,6 +21,8 @@ type SessionState = {
   actualEndTime: number | null;
   pauseStartedAt: number | null;
   totalPausedMs: number;
+  actualDurationMs: number | null;
+  overrunDurationMs: number | null;
   postsViewed: number;
   scrollCount: number;
   midPromptShownAt: number | null;
@@ -33,11 +35,12 @@ type SessionState = {
   exitGoalStatus: ExitGoalStatus;
   promptDecisions: PromptDecisions;
   questionnaireResponses: object;
+  questionnaireSubmittedAt: number | null;
 };
 
 type SessionActions = {
   startSession: (intendedDuration: number, reasonForSession: string) => void;
-  endSession: () => void;
+  endSession: (endedAt?: number) => void;
   incrementPostsViewed: () => void;
   incrementScrollCount: () => void;
   pauseSession: () => void;
@@ -75,6 +78,8 @@ const initialState: SessionState = {
   actualEndTime: null,
   pauseStartedAt: null,
   totalPausedMs: 0,
+  actualDurationMs: null,
+  overrunDurationMs: null,
   postsViewed: 0,
   scrollCount: 0,
   midPromptShownAt: null,
@@ -87,6 +92,7 @@ const initialState: SessionState = {
   exitGoalStatus: null,
   promptDecisions: { mid: null, endSession: null, exit: null },
   questionnaireResponses: {},
+  questionnaireSubmittedAt: null,
 };
 
 export const useSession = create<SessionState & SessionActions>((set) => ({
@@ -102,7 +108,35 @@ export const useSession = create<SessionState & SessionActions>((set) => ({
       reasonForSession,
     })),
 
-  endSession: () => set({ actualEndTime: Date.now() }),
+  endSession: (endedAt) =>
+    set((state) => {
+      if (state.actualEndTime !== null) {
+        return state;
+      }
+
+      const actualEndTime = endedAt ?? Date.now();
+      const activePauseMs =
+        state.pauseStartedAt === null
+          ? 0
+          : Math.max(0, actualEndTime - state.pauseStartedAt);
+      const totalPausedMs = state.totalPausedMs + activePauseMs;
+      const actualDurationMs =
+        state.sessionStartTime === null
+          ? null
+          : Math.max(0, actualEndTime - state.sessionStartTime - totalPausedMs);
+      const overrunDurationMs =
+        actualDurationMs === null || state.intendedDuration === null
+          ? null
+          : actualDurationMs - state.intendedDuration;
+
+      return {
+        actualEndTime,
+        pauseStartedAt: null,
+        totalPausedMs,
+        actualDurationMs,
+        overrunDurationMs,
+      };
+    }),
 
   incrementPostsViewed: () =>
     set((state) => ({ postsViewed: state.postsViewed + 1 })),
@@ -153,7 +187,10 @@ export const useSession = create<SessionState & SessionActions>((set) => ({
     set({ exitReason: reason, exitGoalStatus: goalStatus }),
 
   saveQuestionnaireResponse: (responses) =>
-    set({ questionnaireResponses: responses }),
+    set({
+      questionnaireResponses: responses,
+      questionnaireSubmittedAt: Date.now(),
+    }),
 
   resetSession: () =>
     set((state) => ({

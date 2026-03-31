@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Platform } from 'react-native';
 import { useSession } from '../context/sessionStore';
 import {
@@ -15,8 +15,14 @@ let requestQueue = Promise.resolve();
 let hasWarnedMissingServerConfig = false;
 let hasWarnedExportFailure = false;
 
-const queueRequest = (task: () => Promise<void>) => {
-  requestQueue = requestQueue.then(task).catch((error) => {
+const queueRequest = async (task: () => Promise<void>) => {
+  const nextRequest = requestQueue.then(task);
+  requestQueue = nextRequest.catch(() => undefined);
+
+  try {
+    await nextRequest;
+    hasWarnedExportFailure = false;
+  } catch (error) {
     if (!hasWarnedExportFailure) {
       hasWarnedExportFailure = true;
       console.warn(
@@ -24,14 +30,14 @@ const queueRequest = (task: () => Promise<void>) => {
         error,
       );
     }
-  });
 
-  return requestQueue;
+    throw error;
+  }
 };
 
-const getSessionSnapshot = (): SessionExportData => {
-  const state = useSession.getState();
-
+const getSessionSnapshot = (
+  state = useSession.getState(),
+): SessionExportData => {
   return {
     participantID: state.participantID,
     group: state.group,
@@ -39,6 +45,9 @@ const getSessionSnapshot = (): SessionExportData => {
     reasonForSession: state.reasonForSession,
     sessionStartTime: state.sessionStartTime,
     actualEndTime: state.actualEndTime,
+    totalPausedMs: state.totalPausedMs,
+    actualDurationMs: state.actualDurationMs,
+    overrunDurationMs: state.overrunDurationMs,
     postsViewed: state.postsViewed,
     scrollCount: state.scrollCount,
     midPromptShownAt: state.midPromptShownAt,
@@ -51,6 +60,7 @@ const getSessionSnapshot = (): SessionExportData => {
     exitGoalStatus: state.exitGoalStatus,
     promptDecisions: state.promptDecisions,
     questionnaireResponses: state.questionnaireResponses,
+    questionnaireSubmittedAt: state.questionnaireSubmittedAt,
   };
 };
 
@@ -93,14 +103,12 @@ const postSessionCsv = async (baseUrl: string, session: SessionExportData) => {
   if (!response.ok) {
     throw new Error(`Export server responded with ${response.status}`);
   }
-
-  hasWarnedExportFailure = false;
 };
 
 export function useSessionCsvExport() {
   const exportServerUrl = useMemo(() => resolveExportServerUrl(), []);
 
-  useEffect(() => {
+  const exportSessionCsv = useCallback(async () => {
     if (!exportServerUrl) {
       if (!hasWarnedMissingServerConfig) {
         hasWarnedMissingServerConfig = true;
@@ -109,23 +117,16 @@ export function useSessionCsvExport() {
         );
       }
 
-      return;
+      return false;
     }
 
-    const queueCompletedSessionExport = (session: SessionExportData) =>
-      queueRequest(() => postSessionCsv(exportServerUrl, session));
-
-    const unsubscribe = useSession.subscribe((state, previousState) => {
-      if (
-        state.actualEndTime !== null &&
-        previousState.actualEndTime === null
-      ) {
-        queueCompletedSessionExport(getSessionSnapshot());
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
+    const session = getSessionSnapshot();
+    await queueRequest(() => postSessionCsv(exportServerUrl, session));
+    return true;
   }, [exportServerUrl]);
+
+  return {
+    exportSessionCsv,
+    canExportSessionCsv: exportServerUrl !== null,
+  };
 }

@@ -20,8 +20,26 @@ const sendJson = (response, statusCode, payload) => {
   response.end(JSON.stringify(payload));
 };
 
+const syncHeader = (header) => {
+  if (!fs.existsSync(SESSION_LOG_CSV_PATH)) {
+    return false;
+  }
+
+  const currentContents = fs.readFileSync(SESSION_LOG_CSV_PATH, "utf8");
+  const [currentHeader = "", ...rows] = currentContents.split(/\r?\n/);
+
+  if (currentHeader === header) {
+    return true;
+  }
+
+  const remainingRows = rows.filter((row) => row.length > 0);
+  const nextContents = [header, ...remainingRows].join("\n");
+  fs.writeFileSync(SESSION_LOG_CSV_PATH, nextContents, "utf8");
+  return true;
+};
+
 const appendCompletedRow = ({ header, row }) => {
-  if (fs.existsSync(SESSION_LOG_CSV_PATH)) {
+  if (syncHeader(header)) {
     fs.appendFileSync(SESSION_LOG_CSV_PATH, `\n${row}`, "utf8");
     return;
   }

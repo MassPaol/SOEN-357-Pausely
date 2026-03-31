@@ -11,6 +11,9 @@ export type SessionExportData = {
   reasonForSession: string | null;
   sessionStartTime: number | null;
   actualEndTime: number | null;
+  totalPausedMs: number;
+  actualDurationMs: number | null;
+  overrunDurationMs: number | null;
   postsViewed: number;
   scrollCount: number;
   midPromptShownAt: number | null;
@@ -23,6 +26,7 @@ export type SessionExportData = {
   exitGoalStatus: string | null;
   promptDecisions: PromptDecisions;
   questionnaireResponses: object;
+  questionnaireSubmittedAt: number | null;
 };
 
 const CSV_HEADERS = [
@@ -34,6 +38,8 @@ const CSV_HEADERS = [
   'session_start_time_iso',
   'actual_end_time_ms',
   'actual_end_time_iso',
+  'total_paused_ms',
+  'actual_duration_ms',
   'posts_viewed',
   'scroll_count',
   'mid_prompt_shown_at_ms',
@@ -43,12 +49,14 @@ const CSV_HEADERS = [
   'mid_session_recall',
   'prompt_mid_decision',
   'prompt_end_session_decision',
-  'prompt_exit_decision',
   'end_session_goal_status',
   'end_session_feeling',
+  'prompt_exit_decision',
   'exit_reason',
   'exit_goal_status',
   'overrun_duration_ms',
+  'questionnaire_submitted_at_ms',
+  'questionnaire_submitted_at_iso',
   'questionnaire_responses_json',
 ] as const;
 
@@ -69,15 +77,6 @@ export const buildSessionCsvHeader = () =>
   CSV_HEADERS.map((header) => csvEscape(header)).join(',');
 
 export const buildSessionCsvRow = (session: SessionExportData) => {
-  const overrunDuration =
-    session.actualEndTime !== null &&
-    session.sessionStartTime !== null &&
-    session.intendedDuration !== null
-      ? session.actualEndTime -
-        session.sessionStartTime -
-        session.intendedDuration
-      : null;
-
   const row = [
     session.participantID,
     session.group,
@@ -87,6 +86,8 @@ export const buildSessionCsvRow = (session: SessionExportData) => {
     toIsoString(session.sessionStartTime),
     session.actualEndTime,
     toIsoString(session.actualEndTime),
+    session.totalPausedMs,
+    session.actualDurationMs,
     session.postsViewed,
     session.scrollCount,
     session.midPromptShownAt,
@@ -96,12 +97,14 @@ export const buildSessionCsvRow = (session: SessionExportData) => {
     session.midSessionRecall,
     session.promptDecisions.mid,
     session.promptDecisions.endSession,
-    session.promptDecisions.exit,
     session.endSessionGoalStatus,
     session.endSessionFeeling,
+    session.promptDecisions.exit,
     session.exitReason,
     session.exitGoalStatus,
-    overrunDuration,
+    session.overrunDurationMs,
+    session.questionnaireSubmittedAt,
+    toIsoString(session.questionnaireSubmittedAt),
     JSON.stringify(session.questionnaireResponses),
   ];
 
