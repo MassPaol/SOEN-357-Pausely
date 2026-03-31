@@ -127,8 +127,8 @@ const ActionStat = memo(function ActionStat({
   return content;
 });
 
-const HARD_CAP_MS = 600_000;
-
+// const HARD_CAP_MS = 600_000;
+const HARD_CAP_MS = 60_000;
 function formatTimer(ms: number) {
   const totalSeconds = Math.max(Math.ceil(ms / 1000), 0);
   const m = Math.floor(totalSeconds / 60);
@@ -162,9 +162,10 @@ const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
   const elapsed = sessionStartTime
     ? now - sessionStartTime - totalPausedMs - activePauseMs
     : 0;
-  const duration = intendedDuration ?? 0;
-  const midLeft = duration / 2 - elapsed;
-  const endLeft = duration - elapsed;
+  const sessionLimitMs =
+    group === 'control' ? HARD_CAP_MS : (intendedDuration ?? 0);
+  const midLeft = sessionLimitMs / 2 - elapsed;
+  const endLeft = sessionLimitMs - elapsed;
   const hardCapLeft = HARD_CAP_MS - elapsed;
   const isExperimental = group === 'experimental';
 
@@ -299,7 +300,6 @@ const FeedCard = memo(function FeedCard({
   topInset,
   bottomInset,
   onStopSession,
-  onOpenResearcherConfig,
 }: {
   post: MockPost;
   index: number;
@@ -308,7 +308,6 @@ const FeedCard = memo(function FeedCard({
   topInset: number;
   bottomInset: number;
   onStopSession: () => void;
-  onOpenResearcherConfig: () => void;
 }) {
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -497,12 +496,7 @@ const FeedCard = memo(function FeedCard({
             <Text style={styles.chromeMuted}>Following</Text>
             <Text style={styles.chromeActive}>For You</Text>
             <View style={styles.liveDot} />
-            <Pressable
-              style={styles.stopButton}
-              onPress={onStopSession}
-              onLongPress={onOpenResearcherConfig}
-              delayLongPress={500}
-            >
+            <Pressable style={styles.stopButton} onPress={onStopSession}>
               <Text style={styles.stopButtonText}>Stop</Text>
             </Pressable>
           </View>
@@ -631,6 +625,7 @@ export default function FeedScreen() {
   const incrementScrollCount = useSession(
     (state) => state.incrementScrollCount,
   );
+  const group = useSession((state) => state.group);
   const endSession = useSession((state) => state.endSession);
   const intendedDuration = useSession((state) => state.intendedDuration);
   const pauseSession = useSession((state) => state.pauseSession);
@@ -705,7 +700,7 @@ export default function FeedScreen() {
   }, [endSession, navigation]);
 
   useSessionTimer({
-    intendedDuration: intendedDuration ?? 0,
+    intendedDuration,
     onMidSession,
     onEndSession,
     onHardCap,
@@ -784,15 +779,21 @@ export default function FeedScreen() {
     });
   }, []);
 
-  const handleOpenResearcherConfig = useCallback(() => {
-    navigation.navigate('ResearcherConfig');
-  }, [navigation]);
-
   const handleStopSession = useCallback(() => {
     promptQueueRef.current = [];
+
+    if (group === 'control') {
+      const { actualEndTime: aet } = useSession.getState();
+      if (aet === null) {
+        endSession();
+      }
+      navigation.reset({ index: 0, routes: [{ name: 'Questionnaire' }] });
+      return;
+    }
+
     pauseSession();
     showModal('exit');
-  }, [pauseSession, showModal]);
+  }, [endSession, group, navigation, pauseSession, showModal]);
 
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<MockPost>) => (
@@ -804,17 +805,9 @@ export default function FeedScreen() {
         topInset={insets.top}
         bottomInset={insets.bottom}
         onStopSession={handleStopSession}
-        onOpenResearcherConfig={handleOpenResearcherConfig}
       />
     ),
-    [
-      handleOpenResearcherConfig,
-      handleStopSession,
-      insets.bottom,
-      insets.top,
-      itemHeight,
-      itemWidth,
-    ],
+    [handleStopSession, insets.bottom, insets.top, itemHeight, itemWidth],
   );
 
   const handleScrollBeginDrag = useCallback(() => {

@@ -1,10 +1,5 @@
-import { useRef } from 'react';
-import { Pressable, Platform } from 'react-native';
-import {
-  createNativeStackNavigator,
-  NativeStackNavigationProp,
-} from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { Platform, View } from 'react-native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import FeedScreen from '../screens/FeedScreen';
 import EntryPromptScreen from '../screens/EntryPromptScreen';
@@ -30,38 +25,19 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function LogoHeader() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const tapCount = useRef(0);
-  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleLogoTap = () => {
-    tapCount.current += 1;
-    if (tapTimer.current) clearTimeout(tapTimer.current);
-    if (tapCount.current >= 5) {
-      tapCount.current = 0;
-      navigation.navigate('ResearcherConfig');
-    } else {
-      tapTimer.current = setTimeout(() => {
-        tapCount.current = 0;
-      }, 3000);
-    }
-  };
-
   return (
-    <Pressable
-      onPress={handleLogoTap}
+    <View
       style={{ paddingTop: 50, marginLeft: Platform.OS === 'ios' ? -85 : 0 }}
     >
       <AppLogo width={250} />
-    </Pressable>
+    </View>
   );
 }
 
 export default function AppNavigator() {
   return (
     <Stack.Navigator
-      initialRouteName="EntryPrompt"
+      initialRouteName="ResearcherConfig"
       screenOptions={{
         headerTitle: () => <LogoHeader />,
         headerTitleAlign: 'left',

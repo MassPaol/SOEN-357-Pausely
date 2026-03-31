@@ -10,16 +10,19 @@ const ResearcherConfigScreen = ({
   const { group, setGroup } = useSession();
 
   const handleDone = () => {
-    if (group === 'control') {
-      navigation.navigate('Feed');
-    } else {
-      navigation.goBack();
-    }
+    navigation.reset({ index: 0, routes: [{ name: 'EntryPrompt' }] });
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Researcher config</Text>
+      <View style={styles.noticeCard}>
+        <Text style={styles.noticeTitle}>Participant notice</Text>
+        <Text style={styles.noticeText}>
+          If you are a participant and you see this screen, hand the device to
+          the researcher.
+        </Text>
+      </View>
       <Text style={styles.subheading}>
         Set the participant group before handing the device over. This cannot be
         changed mid-session.
@@ -64,7 +67,11 @@ const ResearcherConfigScreen = ({
           : 'Experimental: participant sees reflective prompts at entry, mid-session, and exit.'}
       </Text>
 
-      <AppButton title="Done" onPress={handleDone} style={styles.button} />
+      <AppButton
+        title="Hand Off To Participant"
+        onPress={handleDone}
+        style={styles.button}
+      />
     </View>
   );
 };
@@ -81,6 +88,27 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
     marginBottom: 8,
+  },
+  noticeCard: {
+    borderRadius: 12,
+    backgroundColor: '#fff7ec',
+    borderWidth: 1,
+    borderColor: '#f2a84e',
+    padding: 16,
+    marginBottom: 20,
+  },
+  noticeTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#c1761f',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  noticeText: {
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 20,
   },
   subheading: {
     fontSize: 14,

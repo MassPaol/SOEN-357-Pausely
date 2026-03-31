@@ -105,7 +105,12 @@ const postSessionCsv = async (baseUrl: string, session: SessionExportData) => {
   }
 };
 
-export function useSessionCsvExport() {
+type UseSessionCsvExportResult = {
+  exportSessionCsv: () => Promise<boolean>;
+  canExportSessionCsv: boolean;
+};
+
+export function useSessionCsvExport(): UseSessionCsvExportResult {
   const exportServerUrl = useMemo(() => resolveExportServerUrl(), []);
 
   const exportSessionCsv = useCallback(async () => {

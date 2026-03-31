@@ -25,7 +25,6 @@ const ResultsScreen = ({
     overrunDurationMs,
     postsViewed,
     resetSession,
-    startSession,
   } = useSession();
   const { exportSessionCsv, canExportSessionCsv } = useSessionCsvExport();
   const [isExporting, setIsExporting] = useState(false);
@@ -45,15 +44,8 @@ const ResultsScreen = ({
   }, [intendedDuration, overrunDurationMs]);
 
   const handleStartNewSession = () => {
-    if (group === 'control') {
-      const randomMinutes = Math.floor(Math.random() * 4) + 2;
-      startSession(randomMinutes * 60 * 1000, '');
-      navigation.reset({ index: 0, routes: [{ name: 'Feed' }] });
-      return;
-    }
-
     resetSession();
-    navigation.reset({ index: 0, routes: [{ name: 'EntryPrompt' }] });
+    navigation.reset({ index: 0, routes: [{ name: 'ResearcherConfig' }] });
   };
 
   const handleExportData = async () => {
@@ -89,6 +81,13 @@ const ResultsScreen = ({
           <Text style={styles.checkMark}>✓</Text>
         </View>
         <Text style={styles.title}>Session complete. Thank you!</Text>
+        <View style={styles.noticeCard}>
+          <Text style={styles.noticeTitle}>Stop Here</Text>
+          <Text style={styles.noticeText}>
+            Please return the device to the researcher. Do not start another
+            session yourself.
+          </Text>
+        </View>
 
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
@@ -116,7 +115,7 @@ const ResultsScreen = ({
         ) : null}
 
         <AppButton
-          title="Start New Session"
+          title="Researcher Only: Start New Session"
           onPress={handleStartNewSession}
           style={styles.primaryButton}
         />
@@ -178,7 +177,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#111',
     textAlign: 'center',
+    marginBottom: 10,
+  },
+  noticeCard: {
+    alignSelf: 'stretch',
+    borderRadius: 14,
+    backgroundColor: '#fff1f0',
+    borderWidth: 1,
+    borderColor: '#d96c5f',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     marginBottom: 24,
+  },
+  noticeTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#b04437',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  noticeText: {
+    fontSize: 15,
+    color: '#6a2b24',
+    textAlign: 'center',
+    lineHeight: 21,
   },
   summaryCard: {
     alignSelf: 'stretch',

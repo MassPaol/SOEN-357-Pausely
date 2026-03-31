@@ -25,7 +25,9 @@ const DURATION_OPTIONS = [
 const EntryPromptScreen = ({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, 'EntryPrompt'>) => {
-  const { startSession, group, sessionStartTime } = useSession();
+  const startSession = useSession((state) => state.startSession);
+  const group = useSession((state) => state.group);
+  const sessionStartTime = useSession((state) => state.sessionStartTime);
   const [selectedMinutes, setSelectedMinutes] = useState(2);
   const [goal, setGoal] = useState('');
 
@@ -38,8 +40,7 @@ const EntryPromptScreen = ({
     }
 
     if (group === 'control') {
-      const randomMinutes = Math.floor(Math.random() * 4) + 2;
-      startSession(randomMinutes * 60 * 1000, '');
+      startSession(null, '');
       navigation.navigate('Feed');
     }
   }, [group, navigation, sessionStartTime, startSession]);

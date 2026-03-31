@@ -39,7 +39,10 @@ type SessionState = {
 };
 
 type SessionActions = {
-  startSession: (intendedDuration: number, reasonForSession: string) => void;
+  startSession: (
+    intendedDuration: number | null,
+    reasonForSession: string,
+  ) => void;
   endSession: (endedAt?: number) => void;
   incrementPostsViewed: () => void;
   incrementScrollCount: () => void;

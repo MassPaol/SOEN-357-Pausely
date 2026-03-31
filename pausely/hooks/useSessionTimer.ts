@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useSession } from '../context/sessionStore';
 
-const HARD_CAP_MS = 600_000; // 10 minutes
+// const HARD_CAP_MS = 600_000;
+const HARD_CAP_MS = 60_000; // 10 minutes
 
 type UseSessionTimerArgs = {
-  intendedDuration: number;
+  intendedDuration: number | null;
   onMidSession: () => void;
   onEndSession: () => void;
   onHardCap: () => void;
@@ -46,7 +47,7 @@ export default function useSessionTimer({
   };
 
   useEffect(() => {
-    if (!sessionStartTime || !intendedDuration) {
+    if (!sessionStartTime) {
       return;
     }
 
@@ -63,16 +64,18 @@ export default function useSessionTimer({
     const activePauseMs = pauseStartedAt ? Date.now() - pauseStartedAt : 0;
     const elapsed =
       Date.now() - sessionStartTime - totalPausedMs - activePauseMs;
-    const midDelay = intendedDuration / 2 - elapsed;
-    const endDelay = intendedDuration - elapsed;
+    const midDelay =
+      intendedDuration === null ? null : intendedDuration / 2 - elapsed;
+    const endDelay =
+      intendedDuration === null ? null : intendedDuration - elapsed;
     const hardCapDelay = HARD_CAP_MS - elapsed;
 
     if (__DEV__) {
       console.log('[useSessionTimer] scheduling timers', {
         intendedDuration,
         elapsed: Math.round(elapsed),
-        midDelay: Math.round(midDelay),
-        endDelay: Math.round(endDelay),
+        midDelay: midDelay === null ? null : Math.round(midDelay),
+        endDelay: endDelay === null ? null : Math.round(endDelay),
         hardCapDelay: Math.round(hardCapDelay),
       });
     }
@@ -105,7 +108,7 @@ export default function useSessionTimer({
       return;
     }
 
-    if (group === 'experimental') {
+    if (group === 'experimental' && midDelay !== null && endDelay !== null) {
       if (midDelay <= 0) {
         fireMid();
       } else {
