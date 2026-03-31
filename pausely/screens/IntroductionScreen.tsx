@@ -9,7 +9,8 @@ const SHARED_INTRO_LINES = [
   'You are participating in a study exploring how people interact with social media applications.',
   'In this study, you will use a simulated social media environment. Your interactions will be recorded for research purposes only.',
   'No personally identifiable information will be collected.',
-  'There are no right or wrong behaviors.',
+  'The study will take between 5 to 15 minutes.',
+  'There are no right or wrong behaviors or actions.',
   'Please interact naturally.',
 ];
 
@@ -18,6 +19,7 @@ const CONTROL_INSTRUCTIONS = [
   'Use the app as you normally would.',
   'You may scroll and interact freely.',
   'You may end the session at any time by clicking the STOP button located at the top right of the screen.',
+  'The session has a maximum time limit as part of the study protocol. You will be notified when the maximum time has been reached.',
   'Once your session is complete, you will be asked to complete a short questionnaire.',
   'When you are finished with the questionnaire, submit your answers, and return the device to the researcher.',
 ];
@@ -28,6 +30,7 @@ const EXPERIMENTAL_INSTRUCTIONS = [
   'During your session, you may receive prompts related to your usage. Answer to the best of abilities.',
   'You may continue using the app after prompts appear.',
   'You may end the session at any time by clicking the STOP button located at the top right of the screen.',
+  'The session has a maximum time as part of the study protocol. You will be notified when the maximum time has been reached.',
   'Once your session is complete, you will be asked to complete a short questionnaire.',
   'When you are finished with the questionnaire, submit your answers, and return the device to the researcher.',
 ];

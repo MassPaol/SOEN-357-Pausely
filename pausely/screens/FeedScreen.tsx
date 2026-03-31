@@ -5,6 +5,7 @@ import {
   Animated,
   FlatList,
   ListRenderItemInfo,
+  Modal,
   Pressable,
   StyleProp,
   StyleSheet,
@@ -128,13 +129,47 @@ const ActionStat = memo(function ActionStat({
 });
 
 // const HARD_CAP_MS = 600_000;
-const HARD_CAP_MS = 120_000;
+const HARD_CAP_MS = 90_000;
 function formatTimer(ms: number) {
   const totalSeconds = Math.max(Math.ceil(ms / 1000), 0);
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
+
+const HardCapNoticeModal = memo(function HardCapNoticeModal({
+  visible,
+  onContinue,
+}: {
+  visible: boolean;
+  onContinue: () => void;
+}) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+    >
+      <View style={styles.hardCapBackdrop}>
+        <View style={styles.hardCapCard}>
+          <View style={styles.hardCapAccentBar} />
+          <Text style={styles.hardCapTitle}>Session time limit reached</Text>
+          <Text style={styles.hardCapBody}>
+            You have reached the time limit for this session. Session duration
+            is limited as part of the study protocol.
+          </Text>
+          <Text style={styles.hardCapBody}>
+            Click continue to proceed to the questionnaire.
+          </Text>
+          <Pressable style={styles.hardCapButton} onPress={onContinue}>
+            <Text style={styles.hardCapButtonText}>Continue</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+});
 
 const DebugMetricsOverlay = memo(function DebugMetricsOverlay({
   topInset,
@@ -299,7 +334,6 @@ const FeedCard = memo(function FeedCard({
   itemHeight,
   topInset,
   bottomInset,
-  onStopSession,
 }: {
   post: MockPost;
   index: number;
@@ -307,7 +341,6 @@ const FeedCard = memo(function FeedCard({
   itemHeight: number;
   topInset: number;
   bottomInset: number;
-  onStopSession: () => void;
 }) {
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -496,9 +529,6 @@ const FeedCard = memo(function FeedCard({
             <Text style={styles.chromeMuted}>Following</Text>
             <Text style={styles.chromeActive}>For You</Text>
             <View style={styles.liveDot} />
-            <Pressable style={styles.stopButton} onPress={onStopSession}>
-              <Text style={styles.stopButtonText}>Stop</Text>
-            </Pressable>
           </View>
 
           <View
@@ -636,6 +666,7 @@ export default function FeedScreen() {
   );
 
   const [visibleModal, setVisibleModal] = useState<VisibleModal>(null);
+  const [isHardCapNoticeVisible, setIsHardCapNoticeVisible] = useState(false);
   const promptQueueRef = useRef<('mid' | 'endSession')[]>([]);
   const visibleModalRef = useRef(visibleModal);
   visibleModalRef.current = visibleModal;
@@ -696,8 +727,8 @@ export default function FeedScreen() {
     setVisibleModal(null);
     const { actualEndTime: aet } = useSession.getState();
     if (aet === null) endSession();
-    navigation.reset({ index: 0, routes: [{ name: 'Questionnaire' }] });
-  }, [endSession, navigation]);
+    setIsHardCapNoticeVisible(true);
+  }, [endSession]);
 
   useSessionTimer({
     intendedDuration,
@@ -731,7 +762,7 @@ export default function FeedScreen() {
       endSession(pausedAt ?? undefined);
     }
     setVisibleModal(null);
-    navigation.reset({ index: 0, routes: [{ name: 'Questionnaire' }] });
+    navigation.reset({ index: 0, routes: [{ name: 'QuestionnaireIntro' }] });
   }, [recordPromptDecision, endSession, navigation]);
 
   const handleExitContinue = useCallback(() => {
@@ -747,8 +778,13 @@ export default function FeedScreen() {
       endSession(pausedAt ?? undefined);
     }
     setVisibleModal(null);
-    navigation.reset({ index: 0, routes: [{ name: 'Questionnaire' }] });
+    navigation.reset({ index: 0, routes: [{ name: 'QuestionnaireIntro' }] });
   }, [recordPromptDecision, endSession, navigation]);
+
+  const handleHardCapContinue = useCallback(() => {
+    setIsHardCapNoticeVisible(false);
+    navigation.reset({ index: 0, routes: [{ name: 'QuestionnaireIntro' }] });
+  }, [navigation]);
 
   const loopRef = useRef(INITIAL_LOOP_COUNT);
   const seenPostIdsRef = useRef(new Set<string>());
@@ -787,7 +823,7 @@ export default function FeedScreen() {
       if (aet === null) {
         endSession();
       }
-      navigation.reset({ index: 0, routes: [{ name: 'Questionnaire' }] });
+      navigation.reset({ index: 0, routes: [{ name: 'QuestionnaireIntro' }] });
       return;
     }
 
@@ -804,10 +840,9 @@ export default function FeedScreen() {
         itemHeight={itemHeight}
         topInset={insets.top}
         bottomInset={insets.bottom}
-        onStopSession={handleStopSession}
       />
     ),
-    [handleStopSession, insets.bottom, insets.top, itemHeight, itemWidth],
+    [insets.bottom, insets.top, itemHeight, itemWidth],
   );
 
   const handleScrollBeginDrag = useCallback(() => {
@@ -867,6 +902,12 @@ export default function FeedScreen() {
           index,
         })}
       />
+      <Pressable
+        style={[styles.stopButton, { top: insets.top + 8 }]}
+        onPress={handleStopSession}
+      >
+        <Text style={styles.stopButtonText}>Stop</Text>
+      </Pressable>
       {__DEV__ ? <DebugMetricsOverlay topInset={insets.top} /> : null}
       <SessionPromptOverlay
         visibleModal={visibleModal}
@@ -876,6 +917,10 @@ export default function FeedScreen() {
         onEndExit={handleEndExit}
         onExitContinue={handleExitContinue}
         onExitEnd={handleExitEnd}
+      />
+      <HardCapNoticeModal
+        visible={isHardCapNoticeVisible}
+        onContinue={handleHardCapContinue}
       />
     </View>
   );
@@ -1162,5 +1207,64 @@ const styles = StyleSheet.create({
   },
   debugValueWarn: {
     color: '#FF6B6B',
+  },
+  hardCapBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  hardCapCard: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    paddingTop: 28,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    overflow: 'hidden',
+    elevation: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 12 },
+  },
+  hardCapAccentBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 6,
+    backgroundColor: '#f2a84e',
+  },
+  hardCapTitle: {
+    color: '#111111',
+    fontSize: 26,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  hardCapBody: {
+    color: '#444444',
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  hardCapButton: {
+    marginTop: 22,
+    width: '100%',
+    borderRadius: 14,
+    backgroundColor: '#f2a84e',
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hardCapButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

@@ -355,7 +355,7 @@ function EndPromptContent({
 
       <Pressable style={[styles.button, styles.buttonPrimary]} onPress={onExit}>
         <Text style={[styles.buttonText, styles.buttonTextPrimary]}>
-          I'm done, exit
+          I'm Done. Exit
         </Text>
       </Pressable>
       <Pressable
@@ -363,7 +363,7 @@ function EndPromptContent({
         onPress={onContinue}
       >
         <Text style={[styles.buttonText, styles.buttonTextSecondary]}>
-          Keep scrolling
+          Keep Scrolling
         </Text>
       </Pressable>
     </>
@@ -423,7 +423,7 @@ function ExitPromptContent({
 
       <Pressable style={[styles.button, styles.buttonPrimary]} onPress={onExit}>
         <Text style={[styles.buttonText, styles.buttonTextPrimary]}>
-          Yes, end session
+          End Session
         </Text>
       </Pressable>
       <Pressable
@@ -431,7 +431,7 @@ function ExitPromptContent({
         onPress={onContinue}
       >
         <Text style={[styles.buttonText, styles.buttonTextSecondary]}>
-          Actually, keep scrolling
+          Return to Scrolling
         </Text>
       </Pressable>
     </>
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 6,
-    backgroundColor: '#F4A261',
+    backgroundColor: '#f2a84e',
   },
   icon: {
     fontSize: 40,
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   buttonPrimary: {
-    backgroundColor: '#F4A261',
+    backgroundColor: '#f2a84e',
   },
   buttonSecondary: {
     backgroundColor: 'transparent',

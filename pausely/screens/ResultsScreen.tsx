@@ -20,10 +20,10 @@ const ResultsScreen = ({
 }: NativeStackScreenProps<RootStackParamList, 'Results'>) => {
   const {
     group,
-    intendedDuration,
     actualDurationMs,
     overrunDurationMs,
     postsViewed,
+    scrollCount,
     resetSession,
   } = useSession();
   const { exportSessionCsv, canExportSessionCsv } = useSessionCsvExport();
@@ -32,16 +32,12 @@ const ResultsScreen = ({
   const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   const overrunMinutes = useMemo(() => {
-    if (overrunDurationMs === null || intendedDuration === null) {
-      return null;
-    }
-
-    if (overrunDurationMs <= 0) {
+    if (overrunDurationMs === null || overrunDurationMs <= 0) {
       return null;
     }
 
     return Math.max(0, Math.round(overrunDurationMs / 60000));
-  }, [intendedDuration, overrunDurationMs]);
+  }, [overrunDurationMs]);
 
   const handleStartNewSession = () => {
     resetSession();
@@ -91,13 +87,7 @@ const ResultsScreen = ({
 
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Intended duration</Text>
-            <Text style={styles.summaryValue}>
-              {formatMinutes(intendedDuration)}
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Actual duration</Text>
+            <Text style={styles.summaryLabel}>Duration</Text>
             <Text style={styles.summaryValue}>
               {formatMinutes(actualDurationMs)}
             </Text>
@@ -105,6 +95,10 @@ const ResultsScreen = ({
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Posts viewed</Text>
             <Text style={styles.summaryValue}>{postsViewed}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Number of scrolls</Text>
+            <Text style={styles.summaryValue}>{scrollCount}</Text>
           </View>
         </View>
 

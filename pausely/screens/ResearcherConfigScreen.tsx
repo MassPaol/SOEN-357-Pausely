@@ -15,7 +15,7 @@ const ResearcherConfigScreen = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Researcher config</Text>
+      <Text style={styles.heading}>Researcher Configuration</Text>
       <View style={styles.noticeCard}>
         <Text style={styles.noticeTitle}>Participant notice</Text>
         <Text style={styles.noticeText}>

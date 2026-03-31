@@ -3,10 +3,14 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "start": "expo start --no-dev --minify",
+    "start:dev": "expo start",
+    "android": "expo start --android --no-dev --minify",
+    "android:dev": "expo start --android",
+    "ios": "expo start --ios --no-dev --minify",
+    "ios:dev": "expo start --ios",
+    "web": "expo start --web --no-dev --minify",
+    "web:dev": "expo start --web",
     "lint": "eslint ."
   },
   "dependencies": {
