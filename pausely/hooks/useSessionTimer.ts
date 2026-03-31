@@ -1,9 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSession } from '../context/sessionStore';
 
-// const HARD_CAP_MS = 600_000;
-const HARD_CAP_MS = 90_000; // 10 minutes
-
+const HARD_CAP_MS = 600_000; //10 minutes
 type UseSessionTimerArgs = {
   intendedDuration: number | null;
   onMidSession: () => void;

@@ -128,8 +128,7 @@ const ActionStat = memo(function ActionStat({
   return content;
 });
 
-// const HARD_CAP_MS = 600_000;
-const HARD_CAP_MS = 90_000;
+const HARD_CAP_MS = 600_000;
 function formatTimer(ms: number) {
   const totalSeconds = Math.max(Math.ceil(ms / 1000), 0);
   const m = Math.floor(totalSeconds / 60);
