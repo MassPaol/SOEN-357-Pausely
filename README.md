@@ -33,7 +33,8 @@ Follow these steps to set up the project locally:
    _(Note: If you encounter an error with `husky`, run `npm install --ignore-scripts` instead.)_
 
 
-3. **If you want to save session data using a physical IOS device, add the export server URL to `pausely/.env`:**
+3. **If you want to save session data using a physical IOS device, add the export server URL to `pausely/.env`. Otherwise, to run the app without saving user data, skip to step 5. (This step is optional. It's only required if you wish to save user data,
+   but is not required if you just want to run the app) :**
 
    Set the Expo public export server URL to the machine that will run the CSV export server.
 
@@ -43,8 +44,11 @@ Follow these steps to set up the project locally:
 
    Replace `<your-local-ip>` with the LAN IP address of your computer so your Expo app can reach it.
 
+   Continue to step 4.
 
-4. **Start the export server from the repository root if you want session data to be saved:**
+
+4. **Start the export server from the repository root (This step is optional. It's only required if you wish to save user data,
+   but is not required if you just want to run the app):**
 
    ```bash
    npm run export-server
@@ -52,6 +56,7 @@ Follow these steps to set up the project locally:
 
    Completed sessions are only written to `exports/pausely-session-log.csv` while this server is running.
 
+   Two terminals are required if you wish to save user data. One will have the export-server running, which you should've done in this step. The second terminal will run the Expo app itself. To run the Expo app continue to step 5. 
 
 5. **Navigate to the application directory:**
 
