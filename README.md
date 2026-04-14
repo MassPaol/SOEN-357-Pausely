@@ -47,7 +47,7 @@ Follow these steps to set up the project locally:
    Continue to step 4.
 
 
-4. **Start the export server from the repository root (This step is optional. It's only required if you wish to save user data,
+4. **Start the export server from the repository root i.e. from \SOEN-357-Pausely (This step is optional. It's only required if you wish to save user data,
    but is not required if you just want to run the app):**
 
    ```bash
